@@ -736,9 +736,11 @@ spec:
               readOnly: true
             - name: cacerts
               mountPath: /fluentd/cacerts
+  {{- if .Values.elasticSearch.enabled}}
             - mountPath: /fluentd/secret
               name: secret-volume
               readOnly: true
+  {{- end }}
       containers:
         - args:
             - -c
@@ -786,9 +788,11 @@ spec:
           volumeMounts:
             - name: cacerts
               mountPath: /fluentd/cacerts
+  {{- if .Values.elasticSearch.enabled}}
             - mountPath: /fluentd/secret
               name: secret-volume
               readOnly: true
+  {{- end }}
   {{- if .Values.fluentd.oci }}
   {{- if .Values.fluentd.oci.apiSecret }}
             - mountPath: /root/.oci
@@ -825,12 +829,14 @@ spec:
           name: {{ .Values.logging.name }}-init
         - name: cacerts
           emptyDir: {}
+  {{- if .Values.elasticSearch.enabled}}
         - name: secret-volume
           secret:
   {{- if .Values.logging.elasticsearchSecret }}
             secretName: {{ .Values.logging.elasticsearchSecret }}
   {{- else }}
             secretName: verrazzano
+  {{- end }}
   {{- end }}
   {{- if .Values.fluentd.oci }}
   {{- if .Values.fluentd.oci.apiSecret }}
