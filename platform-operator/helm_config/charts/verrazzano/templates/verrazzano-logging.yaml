@@ -736,7 +736,7 @@ spec:
               readOnly: true
             - name: cacerts
               mountPath: /fluentd/cacerts
-  {{- if .Values.elasticSearch.enabled}}
+  {{- if or .Values.elasticSearch.enabled .Values.logging.elasticsearchSecret}}
             - mountPath: /fluentd/secret
               name: secret-volume
               readOnly: true
@@ -788,7 +788,7 @@ spec:
           volumeMounts:
             - name: cacerts
               mountPath: /fluentd/cacerts
-  {{- if .Values.elasticSearch.enabled}}
+  {{- if or .Values.elasticSearch.enabled .Values.logging.elasticsearchSecret}}
             - mountPath: /fluentd/secret
               name: secret-volume
               readOnly: true
@@ -829,7 +829,7 @@ spec:
           name: {{ .Values.logging.name }}-init
         - name: cacerts
           emptyDir: {}
-  {{- if .Values.elasticSearch.enabled}}
+  {{- if or .Values.elasticSearch.enabled .Values.logging.elasticsearchSecret}}
         - name: secret-volume
           secret:
   {{- if .Values.logging.elasticsearchSecret }}
