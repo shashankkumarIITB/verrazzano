@@ -200,12 +200,6 @@ const (
 	// CondUpgradeComplete means the upgrade has completed successfully
 	CondUpgradeComplete ConditionType = "UpgradeComplete"
 
-	// CondUpdateStarted means that an update has been started.
-	CondUpdateStarted ConditionType = "UpdateStarted"
-
-	// CondUpdateComplete means that an update has been completed successfully.
-	CondUpdateComplete ConditionType = "UpdateComplete"
-
 	// CondComponentUninstallComplete means a component has successfully uninstalled
 	CondComponentUninstallComplete ConditionType = "UninstallComponentComplete"
 )
@@ -262,9 +256,6 @@ const (
 
 	// CompStateUpgrading is the state when an upgrade is in progress
 	CompStateUpgrading CompStateType = "Upgrading"
-
-	// CompStateUpdating is the state when an update is in progress
-	CompStateUpdating CompStateType = "Updating"
 
 	// CompStateError is the state when a Verrazzano resource has experienced an error that may leave it in an unstable state
 	CompStateError CompStateType = "Error"

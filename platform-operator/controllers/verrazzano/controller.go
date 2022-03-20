@@ -610,7 +610,8 @@ func (r *Reconciler) updateComponentStatus(compContext spi.ComponentContext, mes
 		cr.Status.Components[componentName] = componentStatus
 	}
 	switch conditionType {
-	case installv1alpha1.CondInstallComplete, installv1alpha1.CondUninstallComplete, installv1alpha1.CondUpdateComplete:
+	case installv1alpha1.CondInstallComplete, installv1alpha1.CondUninstallComplete,
+		installv1alpha1.CondComponentUninstallComplete:
 		cr.Status.VerrazzanoInstance = vzinstance.GetInstanceInfo(compContext)
 		componentStatus.LastReconciledGeneration = cr.Generation
 	}

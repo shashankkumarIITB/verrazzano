@@ -140,9 +140,6 @@ const UninstallOperation = "uninstall"
 // UpgradeOperation Component upgrade operation
 const UpgradeOperation = "upgrade"
 
-// UpdateOperation Component update operation
-const UpdateOperation = "update"
-
 // InitializeOperation is the initialize string
 const InitializeOperation = "initialize"
 
