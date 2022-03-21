@@ -895,7 +895,7 @@ def runConsoleTests() {
         export CONSOLE_REPO_BRANCH="${params.CONSOLE_REPO_BRANCH}"
         export CONSOLE_APP_NAME="${SAMPLE_APP_NAME}"
         export CONSOLE_APP_NAMESPACE="${SAMPLE_APP_NAMESPACE}"
-        export CONSOLE_APP_CLUSTER="managed1"
+        export CONSOLE_APP_CLUSTER="${CLUSTER_NAME}"
         export CONSOLE_APP_COMP="${SAMPLE_APP_COMPONENT}"
         RUN_APP_TESTS=true ${GO_REPO_PATH}/verrazzano/ci/scripts/run_console_tests.sh
    """
