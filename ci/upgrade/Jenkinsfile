@@ -43,6 +43,10 @@ pipeline {
                 choices: [ "nip.io", "sslip.io" ])
         booleanParam (description: 'Whether to create kind cluster with Calico for AT testing (defaults to true)', name: 'CREATE_KIND_USE_CALICO', defaultValue: true)
         booleanParam (description: 'Whether to dump k8s cluster on success (off by default can be useful to capture for comparing to failed cluster)', name: 'DUMP_K8S_CLUSTER_ON_SUCCESS', defaultValue: false)
+        string (name: 'CONSOLE_REPO_BRANCH',
+                defaultValue: '',
+                description: 'The branch to check out after cloning the console repository.',
+                trim: true)
         booleanParam (description: 'Whether to emit metrics from the pipeline', name: 'EMIT_METRICS', defaultValue: true)
         booleanParam (description: 'Whether to run BOM Validator after Upgrade', name: 'RUN_BOM_VALIDATOR', defaultValue: true)
         string (name: 'TAGGED_TESTS',
@@ -96,6 +100,12 @@ pipeline {
         NEW_PODS_FILE="${WORKSPACE}/verrazzano/platform-operator/scripts/install/build/logs/verrazzano-new-vpo-app-pods.out"
         NEW_PODS_FILE2="${WORKSPACE}/verrazzano/platform-operator/scripts/install/build/logs/verrazzano-new-vpo-app-pods-2.out"
         APP_NAMEPACES="'todo-list bobs-books hello-helidon springboot sockshop'"
+
+        // sample app deployed before upgrade and UI console tests
+        SAMPLE_APP_NAME="hello-helidon-appconf"
+        SAMPLE_APP_NAMESPACE="hello-helidon-sample"
+        SAMPLE_APP_PROJECT="hello-helidon-sample-proj"
+        SAMPLE_APP_COMPONENT="hello-helidon-component"
 
         // used to emit metrics
          PROMETHEUS_GW_URL = credentials('prometheus-dev-url')
@@ -241,6 +251,11 @@ pipeline {
                         stage('examples helidon') {
                             steps {
                                 runGinkgoNamespace('examples/helidon', "false", "true", "hello-helidon")
+                            }
+                        }
+                        stage ('Verify Metrics') {
+                            steps {
+                                runGinkgoRandomize('metrics/syscomponents')
                             }
                         }
                         // Re-enable this stage when a mechanism is in place to deploy different comp and app yamls based on VZ version
@@ -439,6 +454,21 @@ pipeline {
                         stage('verify-upgrade post-upgrade') {
                             steps {
                                 runGinkgoRandomize('upgrade/post-upgrade/verify')
+                            }
+                        }
+                        stage ('Verify Metrics') {
+                            steps {
+                                runGinkgoRandomize('metrics/syscomponents')
+                            }
+                        }
+                        stage ('Console') {
+                            steps {
+                                runConsoleTests()
+                            }
+                            post {
+                                always {
+                                    sh "${GO_REPO_PATH}/verrazzano/ci/scripts/save_console_screenshots.sh"
+                                }
                             }
                         }
                         stage('examples socks') {
@@ -851,4 +881,20 @@ def restartExampleApps() {
 
         kubectl rollout restart deployment -n hello-helidon
     """
+}
+
+def runConsoleTests() {
+    // Set app information used by the application page UI tests to assert for app info
+    // Console runs on admin cluster and the KUBECONFIG is pointed at it (which is cluster 1)
+    // Make sure that application page tests are also run by setting RUN_APP_TESTS=true since we deployed
+    // a sample app for that purpose
+    sh """
+        export DUMP_DIRECTORY="${TEST_DUMP_ROOT}/console"
+        export CONSOLE_REPO_BRANCH="${params.CONSOLE_REPO_BRANCH}"
+        export CONSOLE_APP_NAME="${SAMPLE_APP_NAME}"
+        export CONSOLE_APP_NAMESPACE="${SAMPLE_APP_NAMESPACE}"
+        export CONSOLE_APP_CLUSTER="managed1"
+        export CONSOLE_APP_COMP="${SAMPLE_APP_COMPONENT}"
+        KUBECONFIG=${ADMIN_KUBECONFIG} RUN_APP_TESTS=true ${GO_REPO_PATH}/verrazzano/ci/scripts/run_console_tests.sh
+   """
 }
