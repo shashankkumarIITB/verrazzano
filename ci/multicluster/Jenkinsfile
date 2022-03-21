@@ -84,6 +84,7 @@ pipeline {
                 description: 'The branch to check out after cloning the console repository.',
                 trim: true)
         booleanParam (description: 'Whether to emit metrics from the pipeline', name: 'EMIT_METRICS', defaultValue: true)
+        booleanParam (description: 'Whether to run BOM Validator after Upgrade', name: 'RUN_BOM_VALIDATOR', defaultValue: true)
         string (name: 'TAGGED_TESTS',
                 defaultValue: '',
                 description: 'A comma separated list of build tags for tests that should be executed (e.g. unstable_test). Default:',
@@ -451,6 +452,19 @@ pipeline {
                 stage ('Verify Managed Cluster Permissions') {
                     steps {
                         verifyManagedClusterPermissions()
+                    }
+                }
+                stage("Validate BOM") {
+                    when {
+                        allOf {
+                            expression{params.RUN_BOM_VALIDATOR == true}
+                        }
+                    }
+                    steps {
+                        sh """
+                            oci --region us-phoenix-1 os object get --namespace ${OCI_OS_NAMESPACE} -bn ${OCI_OS_BUCKET} --name ${env.BRANCH_NAME}/${SHORT_COMMIT_HASH}/bom-validator --file ${WORKSPACE}/bom-validator
+                            chmod +x ${WORKSPACE}/bom-validator
+                        """
                     }
                 }
                 stage ('Verify Metrics') {
@@ -1035,6 +1049,21 @@ def verifyManagedClusterPermissions() {
                     export MANAGED_ACCESS_KUBECONFIG="${KUBECONFIG_DIR}/${count}/managed_kube_config"
                     cd ${GO_REPO_PATH}/verrazzano/tests/e2e
                     ginkgo -v -stream --keep-going --no-color ${GINKGO_REPORT_ARGS} -tags="${params.TAGGED_TESTS}" --focus-file="${params.INCLUDED_TESTS}" --skip-file="${params.EXCLUDED_TESTS}" multicluster/verify-permissions/...
+                """
+            }
+        }
+    }
+}
+
+// Verify the BOM of the clusters
+def verifyBomOfClusters() {
+    catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+        script {
+            int clusterCount = params.TOTAL_CLUSTERS.toInteger()
+            for(int count=1; count<=clusterCount; count++) {
+                sh """
+                    export KUBECONFIG=${KUBECONFIG_DIR}/${count}/kube_config
+                    ${WORKSPACE}/bom-validator
                 """
             }
         }
