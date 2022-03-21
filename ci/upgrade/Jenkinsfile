@@ -888,7 +888,6 @@ def restartExampleApps() {
 
 def runConsoleTests() {
     // Set app information used by the application page UI tests to assert for app info
-    // Console runs on admin cluster and the KUBECONFIG is pointed at it (which is cluster 1)
     // Make sure that application page tests are also run by setting RUN_APP_TESTS=true since we deployed
     // a sample app for that purpose
     sh """
@@ -898,6 +897,6 @@ def runConsoleTests() {
         export CONSOLE_APP_NAMESPACE="${SAMPLE_APP_NAMESPACE}"
         export CONSOLE_APP_CLUSTER="managed1"
         export CONSOLE_APP_COMP="${SAMPLE_APP_COMPONENT}"
-        KUBECONFIG=${ADMIN_KUBECONFIG} RUN_APP_TESTS=true ${GO_REPO_PATH}/verrazzano/ci/scripts/run_console_tests.sh
+        RUN_APP_TESTS=true ${GO_REPO_PATH}/verrazzano/ci/scripts/run_console_tests.sh
    """
 }
