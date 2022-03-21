@@ -610,15 +610,14 @@ func (r *Reconciler) updateComponentStatus(compContext spi.ComponentContext, mes
 		cr.Status.Components[componentName] = componentStatus
 	}
 	switch conditionType {
-	case installv1alpha1.CondInstallComplete, installv1alpha1.CondUninstallComplete,
-		installv1alpha1.CondComponentUninstallComplete:
+	case installv1alpha1.CondInstallComplete, installv1alpha1.CondUninstallComplete:
 		cr.Status.VerrazzanoInstance = vzinstance.GetInstanceInfo(compContext)
 		componentStatus.LastReconciledGeneration = cr.Generation
 	}
 	componentStatus.Conditions = appendConditionIfNecessary(log, componentStatus, condition)
 
 	// Set the state of resource
-	componentStatus.State = checkCondtitionType(conditionType)
+	componentStatus.State = checkComponentCondtitionType(conditionType)
 
 	// Update the status
 	return r.updateVerrazzanoStatus(log, cr)
@@ -634,8 +633,7 @@ func appendConditionIfNecessary(log vzlog.VerrazzanoLogger, compStatus *installv
 	return append(compStatus.Conditions, newCondition)
 }
 
-func checkCondtitionType(currentCondition installv1alpha1.ConditionType) installv1alpha1.CompStateType {
-	// TODO: separate overall VZ states from component states
+func checkComponentCondtitionType(currentCondition installv1alpha1.ConditionType) installv1alpha1.CompStateType {
 	switch currentCondition {
 	case installv1alpha1.CondPreInstall:
 		return installv1alpha1.CompStatePreInstalling
@@ -646,8 +644,6 @@ func checkCondtitionType(currentCondition installv1alpha1.ConditionType) install
 	case installv1alpha1.CondUpgradeStarted:
 		return installv1alpha1.CompStateUpgrading
 	case installv1alpha1.CondUninstallComplete:
-		return installv1alpha1.CompStateReady
-	case installv1alpha1.CondComponentUninstallComplete:
 		return installv1alpha1.CompStateDisabled
 	case installv1alpha1.CondInstallFailed, installv1alpha1.CondUpgradeFailed, installv1alpha1.CondUninstallFailed:
 		return installv1alpha1.CompStateFailed

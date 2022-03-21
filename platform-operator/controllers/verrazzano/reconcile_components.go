@@ -99,7 +99,7 @@ func (r *Reconciler) reconcileComponents(vzctx vzcontext.VerrazzanoContext) (ctr
 			if err := comp.PostUninstall(uninstallContext); err != nil {
 				return newRequeueWithDelay(), err
 			}
-			if err := r.updateComponentStatus(compContext, "Uninstall complete", vzapi.CondComponentUninstallComplete); err != nil {
+			if err := r.updateComponentStatus(compContext, "Uninstall complete", vzapi.CondUninstallComplete); err != nil {
 				return ctrl.Result{Requeue: true}, err
 			}
 		case vzapi.CompStateDisabled:
