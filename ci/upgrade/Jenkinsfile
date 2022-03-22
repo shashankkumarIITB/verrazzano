@@ -417,7 +417,7 @@ pipeline {
                     }
                 }
 
-                stage('Run Acceptance Tests After Upgrade') {
+                stages('Run Acceptance Tests After Upgrade') {
                     // Run console tests before the app denoted by $SAMPLE_APP_NAME gets undeployed
                     stage ('Console') {
                         steps {
