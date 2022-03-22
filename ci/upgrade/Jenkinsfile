@@ -416,19 +416,18 @@ pipeline {
                         }
                     }
                 }
-
-                stages('Run Acceptance Tests After Upgrade') {
+                stage ('Console') {
                     // Run console tests before the app denoted by $SAMPLE_APP_NAME gets undeployed
-                    stage ('Console') {
-                        steps {
-                            runConsoleTests()
-                        }
-                        post {
-                            always {
-                                sh "${GO_REPO_PATH}/verrazzano/ci/scripts/save_console_screenshots.sh"
-                            }
+                    steps {
+                        runConsoleTests()
+                    }
+                    post {
+                        always {
+                            sh "${GO_REPO_PATH}/verrazzano/ci/scripts/save_console_screenshots.sh"
                         }
                     }
+                }
+                stage('Run Acceptance Tests After Upgrade') {
                     parallel {
                         stage("Validate BOM") {
                             when {
