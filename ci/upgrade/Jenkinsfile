@@ -106,8 +106,7 @@ pipeline {
 
         // sample app deployed before upgrade and UI console tests
         SAMPLE_APP_NAME="hello-helidon-appconf"
-        SAMPLE_APP_NAMESPACE="hello-helidon-sample"
-        SAMPLE_APP_PROJECT="hello-helidon-sample-proj"
+        SAMPLE_APP_NAMESPACE="hello-helidon"
         SAMPLE_APP_COMPONENT="hello-helidon-component"
 
         // used to emit metrics
@@ -419,6 +418,17 @@ pipeline {
                 }
 
                 stage('Run Acceptance Tests After Upgrade') {
+                    // Run console tests before the app denoted by $SAMPLE_APP_NAME gets undeployed
+                    stage ('Console') {
+                        steps {
+                            runConsoleTests()
+                        }
+                        post {
+                            always {
+                                sh "${GO_REPO_PATH}/verrazzano/ci/scripts/save_console_screenshots.sh"
+                            }
+                        }
+                    }
                     parallel {
                         stage("Validate BOM") {
                             when {
@@ -462,16 +472,6 @@ pipeline {
                         stage ('Verify Metrics') {
                             steps {
                                 runGinkgoRandomize('metrics/syscomponents')
-                            }
-                        }
-                        stage ('Console') {
-                            steps {
-                                runConsoleTests()
-                            }
-                            post {
-                                always {
-                                    sh "${GO_REPO_PATH}/verrazzano/ci/scripts/save_console_screenshots.sh"
-                                }
                             }
                         }
                         stage('examples socks') {
