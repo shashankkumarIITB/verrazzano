@@ -533,91 +533,8 @@ pipeline {
         }
 
         stage('Acceptance Tests') {
-            stages {
-                stage ('Example apps') {
-                    parallel {
-                        stage ('Examples Helidon') {
-                            steps {
-                                testHelidonExample("multicluster/examples/helidon")
-                            }
-                        }
-                        stage ('Examples Helidon Deprecated') {
-                            steps {
-                                testHelidonExample("multicluster/examples/helidon-deprecated")
-                            }
-                        }
-                        stage ('Delete Deployed App NS') {
-                            steps {
-                                script {
-                                    runHelidonNsOpsTest()
-                                }
-                            }
-                        }
-                        stage ('Examples Sock Shop') {
-                            steps {
-                                testSockExample("multicluster/examples/sock-shop")
-                            }
-                        }
-                        stage('Examples Todo List') {
-                            steps {
-                                testTodoExample("multicluster/examples/todo-list")
-                            }
-                        }
-                    }
-                }
-                stage ('Console') {
-                    steps {
-                        runConsoleTests()
-                    }
-                    post {
-                        always {
-                            sh "${GO_REPO_PATH}/verrazzano/ci/scripts/save_console_screenshots.sh"
-                        }
-                    }
-                }
-                stage ('Undeploy Sample Application') {
-                    steps {
-                        undeploySampleApp()
-                    }
-                }
-                stage ('Multi-cluster Verify Api') {
-                    steps {
-                        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
-                            script {
-                                runMulticlusterVerifyApi()
-                            }
-                        }
-                    }
-                    post {
-                        failure {
-                            script {
-                                dumpK8sCluster("${WORKSPACE}/multicluster-acceptance-tests-cluster-dump-pre-uninstall")
-                            }
-                        }
-                    }
-                }
-            }
-            post {
-                failure {
-                    script {
-                        METRICS_PUSHED=metricTimerEnd("${VZ_TEST_METRIC}", '0')
-                        dumpK8sCluster("${WORKSPACE}/multicluster-acceptance-tests-cluster-dump")
-                    }
-                }
-                aborted {
-                    script {
-                        METRICS_PUSHED=metricTimerEnd("${VZ_TEST_METRIC}", '0')
-                        dumpK8sCluster("${WORKSPACE}/multicluster-acceptance-tests-cluster-dump")
-                    }
-                }
-                success {
-                    script {
-                        METRICS_PUSHED=metricTimerEnd("${VZ_TEST_METRIC}", '1')
-                        if (EFFECTIVE_DUMP_K8S_CLUSTER_ON_SUCCESS == true) {
-                            dumpK8sCluster("${WORKSPACE}/multicluster-acceptance-tests-cluster-dump")
-                        }
-                    }
-                }
+            steps {
+                buildAcceptanceTests()
             }
         }
         stage('Cleanup Tests') {
@@ -747,6 +664,95 @@ pipeline {
         cleanup {
             metricBuildDuration()
             deleteDir()
+        }
+    }
+}
+
+def buildAcceptanceTests() {
+    stages {
+        stage ('Example apps') {
+            parallel {
+                stage ('Examples Helidon') {
+                    steps {
+                        testHelidonExample("multicluster/examples/helidon")
+                    }
+                }
+                stage ('Examples Helidon Deprecated') {
+                    steps {
+                        testHelidonExample("multicluster/examples/helidon-deprecated")
+                    }
+                }
+                stage ('Delete Deployed App NS') {
+                    steps {
+                        script {
+                            runHelidonNsOpsTest()
+                        }
+                    }
+                }
+                stage ('Examples Sock Shop') {
+                    steps {
+                        testSockExample("multicluster/examples/sock-shop")
+                    }
+                }
+                stage('Examples Todo List') {
+                    steps {
+                        testTodoExample("multicluster/examples/todo-list")
+                    }
+                }
+            }
+        }
+        stage ('Console') {
+            steps {
+                runConsoleTests()
+            }
+            post {
+                always {
+                    sh "${GO_REPO_PATH}/verrazzano/ci/scripts/save_console_screenshots.sh"
+                }
+            }
+        }
+        stage ('Undeploy Sample Application') {
+            steps {
+                undeploySampleApp()
+            }
+        }
+        stage ('Multi-cluster Verify Api') {
+            steps {
+                catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                    script {
+                        runMulticlusterVerifyApi()
+                    }
+                }
+            }
+            post {
+                failure {
+                    script {
+                        dumpK8sCluster("${WORKSPACE}/multicluster-acceptance-tests-cluster-dump-pre-uninstall")
+                    }
+                }
+            }
+        }
+    }
+    post {
+        failure {
+            script {
+                METRICS_PUSHED=metricTimerEnd("${VZ_TEST_METRIC}", '0')
+                dumpK8sCluster("${WORKSPACE}/multicluster-acceptance-tests-cluster-dump")
+            }
+        }
+        aborted {
+            script {
+                METRICS_PUSHED=metricTimerEnd("${VZ_TEST_METRIC}", '0')
+                dumpK8sCluster("${WORKSPACE}/multicluster-acceptance-tests-cluster-dump")
+            }
+        }
+        success {
+            script {
+                METRICS_PUSHED=metricTimerEnd("${VZ_TEST_METRIC}", '1')
+                if (EFFECTIVE_DUMP_K8S_CLUSTER_ON_SUCCESS == true) {
+                    dumpK8sCluster("${WORKSPACE}/multicluster-acceptance-tests-cluster-dump")
+                }
+            }
         }
     }
 }
