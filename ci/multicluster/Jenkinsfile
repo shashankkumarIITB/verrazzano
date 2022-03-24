@@ -465,12 +465,17 @@ pipeline {
                             oci --region us-phoenix-1 os object get --namespace ${OCI_OS_NAMESPACE} -bn ${OCI_OS_BUCKET} --name ${env.BRANCH_NAME}/${SHORT_COMMIT_HASH}/bom-validator --file ${WORKSPACE}/bom-validator
                             chmod +x ${WORKSPACE}/bom-validator
                         """
-                        verifyBomOfClusters()
+                        verifyBom()
                     }
                 }
                 stage ('Verify Metrics') {
                     steps {
                         runGinkgoRandomize('metrics/syscomponents')
+                    }
+                }
+                stage('verify-registry-url') {
+                    steps {
+                        runGinkgoRandomize('registry')
                     }
                 }
             }
@@ -521,6 +526,11 @@ pipeline {
                 stage('verify-infra vmi') {
                     steps {
                         runGinkgoRandomize('verify-infra/vmi')
+                    }
+                }
+                stage('verify-upgrade post-upgrade') {
+                    steps {
+                        runGinkgoRandomize('upgrade/post-upgrade/verify', true)
                     }
                 }
             }
@@ -1062,17 +1072,15 @@ def verifyManagedClusterPermissions() {
     }
 }
 
-// Verify the BOM of the clusters
-def verifyBomOfClusters() {
+// Verify the BOM
+def verifyBom() {
     catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
         script {
-            int clusterCount = params.TOTAL_CLUSTERS.toInteger()
-            for(int count=1; count<=clusterCount; count++) {
-                sh """
-                    export KUBECONFIG=${KUBECONFIG_DIR}/${count}/kube_config
-                    ${WORKSPACE}/bom-validator
-                """
-            }
+            // Verify BOM of admin cluster
+            sh """
+                export KUBECONFIG=${ADMIN_KUBECONFIG}
+                ${WORKSPACE}/bom-validator
+            """
         }
     }
 }
@@ -1126,7 +1134,7 @@ def testTodoExample(testSuitePath) {
 }
 
 // Run a test suite against all clusters
-def runGinkgoRandomize(testSuitePath) {
+def runGinkgoRandomize(testSuitePath, adminClusterOnly = false) {
     catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
         script {
             int clusterCount = params.TOTAL_CLUSTERS.toInteger()
@@ -1145,6 +1153,9 @@ def runGinkgoRandomize(testSuitePath) {
                     cd ${GO_REPO_PATH}/verrazzano/tests/e2e
                     ginkgo -p --randomize-all -v --keep-going --no-color ${GINKGO_REPORT_ARGS} -tags="${params.TAGGED_TESTS}" --focus-file="${params.INCLUDED_TESTS}" --skip-file="${params.EXCLUDED_TESTS}" ${testSuitePath}/...
                 """
+                if (adminClusterOnly == true && count == 1) {
+                    break;
+                }
             }
         }
     }
