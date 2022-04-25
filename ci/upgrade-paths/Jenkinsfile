@@ -472,6 +472,11 @@ pipeline {
                         runGinkgoRandomize('metrics/syscomponents')
                     }
                 }
+                stage('verify-registry-url') {
+                    steps {
+                        runGinkgo('registry')
+                    }
+                }
             }
             post {
                 failure {
