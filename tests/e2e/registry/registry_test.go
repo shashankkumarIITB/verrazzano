@@ -5,7 +5,6 @@ package registry
 
 import (
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
@@ -22,7 +21,7 @@ const (
 	pollingInterval = 10 * time.Second
 )
 
-var registry = os.Getenv("REGISTRY")
+var registry = pkg.GetRegistry()
 
 // List of namespaces from which all the pods are queried to confirm the images are loaded from the target registry/repo
 var listOfNamespaces = []string{

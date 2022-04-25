@@ -508,14 +508,20 @@ func getKubeConfigPath(kubeconfigPath string) (string, error) {
 	return kubeconfigPath, nil
 }
 
+// GetRegistry returns the registry for container images (accounts for private registry)
+func GetRegistry() string {
+	defaultRegistry := "ghcr.io"
+	registry := os.Getenv("REGISTRY")
+	if len(registry) > 0 {
+		return registry
+	}
+	return defaultRegistry
+}
+
 // GetImagePrefix Gets the image prefix for container images (accounts for private registry)
 func GetImagePrefix() string {
-	imagePrefix := "ghcr.io"
-	registry := os.Getenv("REGISTRY")
+	imagePrefix := GetRegistry()
 	privateRepo := os.Getenv("PRIVATE_REPO")
-	if len(registry) > 0 {
-		imagePrefix = registry
-	}
 	if len(privateRepo) > 0 {
 		imagePrefix += "/" + privateRepo
 	}
