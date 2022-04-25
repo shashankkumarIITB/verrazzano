@@ -474,7 +474,7 @@ pipeline {
                 }
                 stage('verify-registry-url') {
                     steps {
-                        runGinkgo('registry')
+                        runGinkgoRandomize('registry')
                     }
                 }
             }
