@@ -1189,6 +1189,12 @@ def createOKEClusters(clusterPrefix) {
         int clusterCount = params.TOTAL_CLUSTERS.toInteger()
         sh """
             mkdir -p ${KUBECONFIG_DIR}
+            # get the ssh public key
+            ssh-keygen -y -e -f ${OPC_USER_KEY_FILE} > /tmp/opc_ssh2.pub
+            # convert SSH2 public key into an OpenSSH format
+            ssh-keygen -i -f /tmp/opc_ssh2.pub > /tmp/opc_ssh.pub
+            # set the ssh public key value for terraform
+            export TF_VAR_ssh_public_key_path=/tmp/opc_ssh.pub
             echo "Create OKE cluster"
             cd ${TEST_SCRIPTS_DIR}
             TF_VAR_label_prefix=${clusterPrefix} TF_VAR_state_name=multicluster-${env.BUILD_NUMBER}-${env.BRANCH_NAME} ./create_oke_multi_cluster.sh "$clusterCount" "${KUBECONFIG_DIR}" ${params.CREATE_CLUSTER_USE_CALICO}
