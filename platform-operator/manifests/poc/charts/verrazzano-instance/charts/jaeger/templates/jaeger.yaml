@@ -1,0 +1,12 @@
+{{- if .Values.jaeger.enabled}}
+{{- $fullName := include "jaeger.fullname" . -}}
+apiVersion: jaegertracing.io/v1
+kind: Jaeger
+metadata:
+  name: {{ include "jaeger.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  annotations:
+    sidecar.istio.io/inject: {{.Values.jaeger.istioInject}}
+    {{- toYaml . | nindent 4 }}
+{{- end }}

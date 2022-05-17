@@ -1,0 +1,47 @@
+# Copyright (c) 2021, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+{{- $fullName := include "verrazzano-instance.fullname" . -}}
+apiVersion: install.verrazzano.io/v1alpha1
+kind: Verrazzano
+metadata:
+  name: {{ $fullName }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  profile: dev
+  components:
+    applicationOperator:
+      enabled: {{.Values.applicationOperator.enabled}}
+    authProxy:
+      enabled: {{.Values.authProxy.enabled}}
+    certManager:
+      enabled: {{.Values.certManager.enabled}}
+    coherenceOperator:
+      enabled: {{.Values.coherenceOperator.enabled}}
+    console:
+      enabled: {{.Values.console.enabled}}
+    elasticsearch:
+      enabled: {{.Values.elasticsearch.enabled}}
+    fluentd:
+      enabled: {{.Values.fluentd.enabled}}
+    grafana:
+      enabled: {{.Values.grafana.enabled}}
+    ingress:
+      enabled: {{.Values.ingressNGINX.enabled}}
+    istio:
+      enabled: {{.Values.istio.enabled}}
+    keycloak:
+      enabled: {{.Values.keycloak.enabled}}
+    kiali:
+      enabled: {{.Values.kiali.enabled}}
+    kibana:
+      enabled: {{.Values.kibana.enabled}}
+    oam:
+      enabled: {{.Values.oam.enabled}}
+    prometheus:
+      enabled: {{.Values.prometheus.enabled}}
+    rancher:
+      enabled: {{.Values.rancher.enabled}}
+    weblogicOperator:
+      enabled: {{.Values.weblogicOperator.enabled}}
+    verrazzano:
+      enabled: {{.Values.verrazzano.enabled}}

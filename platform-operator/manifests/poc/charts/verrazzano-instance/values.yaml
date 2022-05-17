@@ -1,0 +1,43 @@
+# Copyright (c) 2021, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+profile: dev
+
+applicationOperator:
+  enabled: false
+authProxy:
+  enabled: false
+certManager:
+  enabled: false
+coherenceOperator:
+  enabled: false
+console:
+  enabled: false
+elasticsearch:
+  enabled: false
+fluentd:
+  enabled: false
+grafana:
+  enabled: false
+nginx:
+  enabled: false
+istio:
+  enabled: false
+jaegerOperator:
+  enabled: false
+keycloak:
+  enabled: false
+kiali:
+  enabled: false
+kibana:
+  enabled: false
+oam:
+  enabled: false
+prometheus:
+  enabled: false
+rancher:
+  enabled: false
+weblogicOperator:
+  enabled: false
+verrazzano:
+  enabled: false
