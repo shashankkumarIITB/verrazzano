@@ -41,3 +41,4 @@ weblogicOperator:
   enabled: false
 verrazzano:
   enabled: false
+
