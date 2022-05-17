@@ -1,13 +1,13 @@
 # Copyright (c) 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
-{{- $fullName := include "verrazzano-instance.fullname" . -}}
+
 apiVersion: install.verrazzano.io/v1alpha1
 kind: Verrazzano
 metadata:
-  name: {{ $fullName }}
+  name: {{ .Release.Name }}
   namespace: {{ .Release.Namespace }}
 spec:
-  profile: dev
+  profile: {{.Values.profile }}
   components:
     applicationOperator:
       enabled: {{.Values.applicationOperator.enabled}}
@@ -26,7 +26,7 @@ spec:
     grafana:
       enabled: {{.Values.grafana.enabled}}
     ingress:
-      enabled: {{.Values.ingressNGINX.enabled}}
+      enabled: {{.Values.nginx.enabled}}
     istio:
       enabled: {{.Values.istio.enabled}}
     keycloak:
