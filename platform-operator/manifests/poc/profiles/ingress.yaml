@@ -10,7 +10,7 @@ ingress:
   - host: hello
     http:
       paths:
-      - path: /greet
+      - path: /
         pathType: Prefix
         backend:
           service:
