@@ -8,7 +8,8 @@ ingress:
     nginx.ingress.kubernetes.io/rewrite-target: /
   hosts:
   - host: hello
-    paths:
+    http:
+      paths:
       - path: /greet
         pathType: Prefix
         backend:
