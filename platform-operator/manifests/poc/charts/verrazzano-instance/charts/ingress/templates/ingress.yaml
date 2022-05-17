@@ -34,7 +34,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: test
+                name: {{ .backend.service.name }}
                 port:
                   number: {{ .backend.service.port.number }}
           {{- end }}
