@@ -39,6 +39,16 @@ spec:
       enabled: {{.Values.oam.enabled}}
     prometheus:
       enabled: {{.Values.prometheus.enabled}}
+    kubeStateMetrics:
+      enabled: {{.Values.kubeStateMetrics.enabled}}
+    prometheusAdapter:
+      enabled: {{.Values.prometheusAdapter.enabled}}
+    prometheusNodeExporter:
+      enabled: {{.Values.prometheusNodeExporter.enabled}}
+    prometheusOperator:
+      enabled: {{.Values.prometheusOperator.enabled}}
+    prometheusPushgateway:
+      enabled: {{.Values.prometheusPushgateway.enabled}}
     rancher:
       enabled: {{.Values.rancher.enabled}}
     weblogicOperator:
