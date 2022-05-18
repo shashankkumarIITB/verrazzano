@@ -17,7 +17,9 @@ component-manifests: controller-gen
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=$(CRD_PATH)
 	# Add copyright headers to the kubebuilder generated CRDs
 	./hack/add-crd-header.sh
-	./hack/update-codegen.sh "dns:v1alpha1" "dns" "boilerplate-clusters.go.txt"
+	./hack/update-codegen.sh "verrazzano:v1alpha1" "verrazzano" "boilerplate.go.txt"
+	./hack/update-codegen.sh "clusters:v1alpha1" "clusters" "boilerplate-clusters.go.txt"
+	./hack/update-codegen.sh "dns:v1alpha1" "dns" "boilerplate.go.txt"
 
 
 # Generate manifests e.g. CRD, RBAC etc.z

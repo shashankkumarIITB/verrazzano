@@ -11,7 +11,6 @@ import (
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:path=dnss
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:shortName=vz;vzs
 // +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.conditions[-1:].type",description="The current status of the install/uninstall"
 // +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".status.version",description="The current version of the DNS installation"
 // +genclient
