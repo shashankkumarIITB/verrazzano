@@ -105,7 +105,7 @@ go-install:
 	$(GO) install ./...
 
 .PHONY: manifests
-manifests: platform-manifests
+manifests: component-manifests
 
 # Generate mocks
 .PHONY: mock-gen
