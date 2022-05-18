@@ -21,7 +21,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-const finalizerName = "managedcluster.verrazzano.io"
+const finalizerName = "dns.verrazzano.io"
+
+// SetupWithManager creates a new controller and adds it to the manager
+func (r *DNSReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	return ctrl.NewControllerManagedBy(mgr).
+		For(&dnsapi.DNS{}).
+		Complete(r)
+}
 
 // DNSReconciler reconciles a DNS object.
 // The reconciler will create a ServiceAcount, RoleBinding, and a Secret which

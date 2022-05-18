@@ -8,29 +8,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// +kubebuilder:object:root=true
-// +kubebuilder:resource:path=dnss
-// +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.conditions[-1:].type",description="The current status of the install/uninstall"
-// +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".status.version",description="The current version of the DNS installation"
-// +genclient
-
-type DNS struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	Spec   DNSSpec   `json:"spec,omitempty"`
-	Status DNSStatus `json:"status,omitempty"`
-}
-
-// +kubebuilder:object:root=true
-
-type DNSList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []DNS `json:"items"`
-}
-
 // DNSSpec defines the desired state of DNS
 type DNSSpec struct {
 	// DNS type of wildcard.  This is the default.
@@ -87,4 +64,23 @@ type OCI struct {
 type External struct {
 	// DNS suffix appended to EnviromentName to form DNS name
 	Suffix string `json:"suffix"`
+}
+
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:subresource:status
+// +genclient
+type DNS struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   DNSSpec   `json:"spec,omitempty"`
+	Status DNSStatus `json:"status,omitempty"`
+}
+
+// +kubebuilder:object:root=true
+type DNSList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []DNS `json:"items"`
 }

@@ -16,10 +16,13 @@ import (
 	"github.com/verrazzano/verrazzano/pkg/helm"
 	vzlog "github.com/verrazzano/verrazzano/pkg/log"
 	clustersv1alpha1 "github.com/verrazzano/verrazzano/platform-operator/apis/clusters/v1alpha1"
+	dnsapi "github.com/verrazzano/verrazzano/platform-operator/apis/components/dns/v1alpha1"
 	installv1alpha1 "github.com/verrazzano/verrazzano/platform-operator/apis/verrazzano/v1alpha1"
 	clusterscontroller "github.com/verrazzano/verrazzano/platform-operator/controllers/clusters"
+	dnscontroller "github.com/verrazzano/verrazzano/platform-operator/controllers/components/dns"
 	secretscontroller "github.com/verrazzano/verrazzano/platform-operator/controllers/secrets"
 	vzcontroller "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano"
+
 	internalconfig "github.com/verrazzano/verrazzano/platform-operator/internal/config"
 	"github.com/verrazzano/verrazzano/platform-operator/internal/k8s/certificate"
 	"github.com/verrazzano/verrazzano/platform-operator/internal/k8s/netpolicy"
@@ -46,6 +49,7 @@ func init() {
 	_ = vmov1.AddToScheme(scheme)
 	_ = installv1alpha1.AddToScheme(scheme)
 	_ = clustersv1alpha1.AddToScheme(scheme)
+	_ = dnsapi.AddToScheme(scheme)
 
 	_ = istioclinet.AddToScheme(scheme)
 	_ = istioclisec.AddToScheme(scheme)
@@ -182,6 +186,15 @@ func main() {
 			os.Exit(1)
 		}
 		mgr.GetWebhookServer().CertDir = config.CertDir
+	}
+
+	// Setup the reconciler for DNS objects
+	if err = (&dnscontroller.DNSReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		log.Error(err, "Failed to setup controller ", vzlog.FieldController, "DNS")
+		os.Exit(1)
 	}
 
 	// Setup the reconciler for VerrazzanoManagedCluster objects
