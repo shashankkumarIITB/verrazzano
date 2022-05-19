@@ -179,7 +179,7 @@ func (r *Reconciler) resolvePendingUpgrades(compName string, compLog vzlog.Verra
 	labelSelector := kblabels.NewSelector()
 	labelSelector = labelSelector.Add(*nameReq, *notDeployedReq, *notSupersededReq)
 	helmSecrets := v1.SecretList{}
-	err := r.ClientReconcilerontext.TODO(), &helmSecrets, &clipkg.ListOptions{LabelSelector: labelSelector})
+	err := r.Client.List(context.TODO(), &helmSecrets, &clipkg.ListOptions{LabelSelector: labelSelector})
 	if err != nil {
 		if errors.IsNotFound(err) {
 			compLog.Debugf("No pending upgrade found for component %s.  Re-trying upgrade", compName)

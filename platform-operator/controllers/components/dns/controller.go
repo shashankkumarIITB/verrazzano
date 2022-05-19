@@ -8,9 +8,9 @@ import (
 	"sync"
 	"time"
 
-	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"k8s.io/apimachinery/pkg/types"
 
-	k8net "k8s.io/api/networking/v1"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 
 	vzctrl "github.com/verrazzano/verrazzano/pkg/controller"
 	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
@@ -46,18 +46,11 @@ var initialized bool
 // contains the kubeconfig to be used by the Multi-Cluster Agent to access the admin cluster.
 type Reconciler struct {
 	client.Client
-	Scheme     *runtime.Scheme
-	Controller controller.Controller
-	log        vzlog.VerrazzanoLogger
-	WatchMutex *sync.RWMutex
-	ingresses  []*k8net.Ingress
-}
-
-// bindingParams used to mutate the RoleBinding
-type bindingParams struct {
-	DNS                *dnsapi.DNS
-	roleName           string
-	serviceAccountName string
+	Scheme       *runtime.Scheme
+	Controller   controller.Controller
+	log          vzlog.VerrazzanoLogger
+	WatchMutex   *sync.RWMutex
+	ingressNames []*types.NamespacedName
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -109,7 +102,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	// The resource has been reconciled.
 	log.Oncef("Successfully reconciled DNS resource %v", req.NamespacedName)
-
 	return ctrl.Result{}, nil
 }
 
@@ -142,7 +134,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, log vzlog.VerrazzanoLogger
 		}
 	}
 
-	return r.reconcileDNS(ctx, cr, log)
+	return ctrl.Result{}, r.reconcileDNS(ctx, cr, r.getIngressNames())
 }
 
 // Create a new Result that will cause a reconcile requeue after a short delay
