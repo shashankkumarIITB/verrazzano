@@ -126,13 +126,13 @@ func (r *Reconciler) doReconcile(ctx context.Context, log vzlog.VerrazzanoLogger
 	}
 
 	// Add our finalizer if not already added
-	if !vzstring.SliceContainsString(cr.ObjectMeta.Finalizers, finalizerName) {
-		log.Infof("Adding finalizer %s", finalizerName)
-		cr.ObjectMeta.Finalizers = append(cr.ObjectMeta.Finalizers, finalizerName)
-		if err := r.Update(ctx, cr); err != nil {
-			return ctrl.Result{}, err
-		}
-	}
+	//if !vzstring.SliceContainsString(cr.ObjectMeta.Finalizers, finalizerName) {
+	//	log.Infof("Adding finalizer %s", finalizerName)
+	//	cr.ObjectMeta.Finalizers = append(cr.ObjectMeta.Finalizers, finalizerName)
+	//	if err := r.Update(ctx, cr); err != nil {
+	//		return ctrl.Result{}, err
+	//	}
+	//}
 
 	return ctrl.Result{}, r.reconcileDNS(ctx, cr, r.getIngressNames())
 }

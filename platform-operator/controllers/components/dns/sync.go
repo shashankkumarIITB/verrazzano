@@ -3,6 +3,7 @@ package dns
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	ctrlerrors "github.com/verrazzano/verrazzano/pkg/controller/errors"
 
@@ -28,6 +29,19 @@ func (r *Reconciler) reconcileDNS(ctx context.Context, cr *dnsapi.DNS, ingressNS
 		err = r.Status().Update(ctx, cr)
 		if err != nil {
 			return r.log.ErrorfNewErr("Failed to update the Verrazzano DNS resource: %v", err)
+		}
+	}
+
+	if len(ingressNSNs) == 0 {
+		// This is unusual that an ingress doesn't exist since a DNS resource was created.
+		// Just to be sure, double check
+		ingressNSNs, err = r.searchForAnnotatedIngresses()
+		if err != nil {
+			return err
+		}
+		if len(ingressNSNs) == 0 {
+			r.log.Progressf("No ingresses exist with the Verrazzano DNS annotation")
+			return nil
 		}
 	}
 
@@ -61,32 +75,37 @@ func buildDomainName(cli client.Reader, cr *dnsapi.DNS, log vzlog.VerrazzanoLogg
 // Get the IP from Istio resources
 func buildDomainNameForWildcard(cli client.Reader, cr *dnsapi.DNS, log vzlog.VerrazzanoLogger) (string, error) {
 	var IP string
+	var serviceName string
+	var serviceNamespace string
+
+	wildcard := "nip.io"
+	if cr.Spec.Wildcard != nil {
+		wildcard = cr.Spec.Wildcard.Domain
+		serviceNamespace = cr.Spec.Wildcard.Service.Namespace
+		serviceName = cr.Spec.Wildcard.Service.Name
+	}
 
 	// Get the IP from the specified service
-	if len(cr.Spec.Wildcard.Service.Name) > 0 && len(cr.Spec.Wildcard.Service.Namespace) > 0 {
+	if len(serviceName) > 0 && len(serviceNamespace) > 0 {
 		service := corev1.Service{}
-		err := cli.Get(context.TODO(), types.NamespacedName{Name: cr.Spec.Wildcard.Service.Name, Namespace: cr.Spec.Wildcard.Service.Namespace}, &service)
+		err := cli.Get(context.TODO(), types.NamespacedName{Name: serviceName, Namespace: serviceNamespace}, &service)
 		if err != nil {
 			return "", log.ErrorfNewErr("Failed getting service %v: %v", err)
 		}
 		IP = getIPFromService(&service)
 		if len(IP) == 0 {
-			log.Progress("Waiting for service %s/%s to have an external or ingress IP", service.Namespace, service.Name)
+			log.Progressf("Waiting for service %s/%s to have an external or ingress IP", service.Namespace, service.Name)
 		}
 	} else {
 		// Need to discover a service with an IP that can be used
 		var err error
-		IP, err = discoverIngressIP(cli, cr.Spec.Wildcard.Service.Namespace, log)
+		IP, err = discoverIngressIP(cli, serviceNamespace, log)
 		if err != nil {
 			return "", err
 		}
 	}
 
-	wildcard := "nip.io"
-	if cr.Spec.Wildcard != nil {
-		wildcard = cr.Spec.Wildcard.Domain
-	}
-	domain := IP + "." + wildcard
+	domain := fmt.Sprintf("%s.%s.%s", cr.Spec.Subdomain, IP, wildcard)
 	return domain, nil
 }
 
@@ -115,7 +134,7 @@ func discoverIngressIP(cli client.Reader, namespace string, log vzlog.Verrazzano
 	for _, service := range serviceLlist.Items {
 		IP := getIPFromService(&service)
 		if len(IP) > 0 {
-			log.Once("Discovered IP %s in service %s/%s", IP, service.Namespace, service.Name)
+			log.Oncef("Discovered IP %s in service %s/%s", IP, service.Namespace, service.Name)
 			return IP, nil
 		}
 	}

@@ -29,7 +29,7 @@ type DNSSpec struct {
 // DNSStatus defines the observed state of DNS
 type DNSStatus struct {
 	// The full domain name
-	DomainName string `json:"state,omitempty"`
+	DomainName string `json:"domainName,omitempty"`
 	// The latest available observations of an object's current state.
 	Conditions []Condition `json:"conditions,omitempty"`
 	// State of the DNS custom resource

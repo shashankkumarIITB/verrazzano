@@ -97,3 +97,19 @@ func (r *Reconciler) getIngressNames() []*types.NamespacedName {
 	}
 	return ingressNames
 }
+
+func (r Reconciler) searchForAnnotatedIngresses() ([]*types.NamespacedName, error) {
+	r.log.Progress("Searching for Ingresses that DNS annotation")
+
+	NSNs := []*types.NamespacedName{}
+	ingressList := k8net.IngressList{}
+	if err := r.List(context.TODO(), &ingressList); err != nil {
+		return nil, r.log.ErrorfNewErr("Error listing ingresses: %v", err)
+	}
+	for _, ingress := range ingressList.Items {
+		if ingress.Annotations == nil || ingress.Annotations[vzDnsAnnotation] != "true" {
+			NSNs = append(NSNs, &types.NamespacedName{Namespace: ingress.Namespace, Name: ingress.Name})
+		}
+	}
+	return NSNs, nil
+}
