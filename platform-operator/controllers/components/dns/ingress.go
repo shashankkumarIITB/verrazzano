@@ -4,9 +4,13 @@ import (
 	"context"
 	"strings"
 
+	ctrlerrors "github.com/verrazzano/verrazzano/pkg/controller/errors"
+
 	k8net "k8s.io/api/networking/v1"
+	k8err "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -34,6 +38,10 @@ func (r *Reconciler) reconcileIngress(ctx context.Context, ingressNSN *types.Nam
 		return nil
 	})
 	if err != nil {
+		if k8err.IsConflict(err) {
+			r.log.Progressf("Conflict updating Ingress %v, retrying to update", ingressNSN)
+			return ctrlerrors.RetryableError{}
+		}
 		return r.log.ErrorfNewErr("Failed to udpate Ingress %v: %v", ingressNSN, err)
 	}
 	r.log.Progressf("Ingress %v host field is set to %s", ingressNSN, domain)

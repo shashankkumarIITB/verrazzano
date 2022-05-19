@@ -6,6 +6,7 @@ ingress:
   enabled: true
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
+    dns.verrazzano.io/set-host: "true"
   hosts:
   - host: hello
     http:
