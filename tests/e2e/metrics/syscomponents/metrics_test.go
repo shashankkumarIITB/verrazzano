@@ -253,6 +253,7 @@ func verifyLabels(envoyStatsMetric string, ns string, pod string) bool {
 					if pkg.Jq(metric, "metric", getClusterNameMetricLabel()) == "local" {
 						return true
 					}
+					pkg.Log(pkg.Error, fmt.Sprintf("Missing cluster label for envoy metrics for ns: %s and pod: %s\n", ns, pod))
 				} else {
 					if pkg.Jq(metric, "metric", getClusterNameMetricLabel()) == nil {
 						return true
@@ -261,6 +262,7 @@ func verifyLabels(envoyStatsMetric string, ns string, pod string) bool {
 			}
 		}
 	}
+	pkg.Log(pkg.Error, fmt.Sprintf("Unable to find envoy metrics for ns: %s and pod: %s\n", ns, pod))
 	return false
 }
 
