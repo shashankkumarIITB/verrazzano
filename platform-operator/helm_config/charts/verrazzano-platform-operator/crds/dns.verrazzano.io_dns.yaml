@@ -1,0 +1,139 @@
+# Copyright (c) 2022, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+# Copyright (c) 2022, , Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.4.1
+  creationTimestamp: null
+  name: dns.dns.verrazzano.io
+spec:
+  group: dns.verrazzano.io
+  names:
+    kind: DNS
+    listKind: DNSList
+    plural: dns
+    singular: dns
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: DNSSpec defines the desired state of DNS
+            properties:
+              external:
+                description: DNS type of external. For example, OLCNE uses this type.
+                properties:
+                  suffix:
+                    description: DNS suffix appended to EnviromentName to form DNS
+                      name
+                    type: string
+                required:
+                - suffix
+                type: object
+              oci:
+                description: DNS type of OCI (Oracle Cloud Infrastructure)
+                properties:
+                  dnsScope:
+                    type: string
+                  dnsZoneCompartmentOCID:
+                    type: string
+                  dnsZoneName:
+                    type: string
+                  dnsZoneOCID:
+                    type: string
+                  ociConfigSecret:
+                    type: string
+                required:
+                - dnsZoneCompartmentOCID
+                - dnsZoneName
+                - dnsZoneOCID
+                - ociConfigSecret
+                type: object
+              subdomain:
+                description: Subdomain - example subdomain.128.1.2.3.nip.io
+                type: string
+              wildcard:
+                description: DNS type of wildcard.  This is the default.
+                properties:
+                  domain:
+                    description: DNS wildcard domain (nip.io, sslip.io, etc.)
+                    type: string
+                  service:
+                    description: Service which has the IP to use
+                    properties:
+                      name:
+                        type: string
+                      namespace:
+                        type: string
+                    required:
+                    - name
+                    - namespace
+                    type: object
+                required:
+                - domain
+                type: object
+            type: object
+          status:
+            description: DNSStatus defines the observed state of DNS
+            properties:
+              conditions:
+                description: The latest available observations of an object's current
+                  state.
+                items:
+                  properties:
+                    lastTransitionTime:
+                      description: Last time the condition transitioned from one status
+                        to another.
+                      type: string
+                    message:
+                      description: Human readable message indicating details about
+                        last transition.
+                      type: string
+                    status:
+                      description: Status of the condition, one of True, False, Unknown.
+                      type: string
+                    type:
+                      description: Type of condition.
+                      type: string
+                  required:
+                  - status
+                  - type
+                  type: object
+                type: array
+              domainName:
+                description: The full domain name
+                type: string
+              state:
+                description: State of the DNS custom resource
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
