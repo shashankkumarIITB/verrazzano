@@ -2,6 +2,7 @@ package dns
 
 import (
 	"context"
+	"strings"
 
 	k8net "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -77,7 +78,7 @@ func createReconcileEventHandler(namespace, name string) handler.EventHandler {
 func (r *Reconciler) CheckIngress(ingress *k8net.Ingress) bool {
 	// todo - this should have verrazzano namespace/name as value so that we can have
 	// multiple verrazzanos
-	if ingress.Annotations == nil || ingress.Annotations[vzDnsAnnotation] != "true" {
+	if !isAnnotated(ingress) {
 		return false
 	}
 	r.WatchMutex.Lock()
@@ -107,9 +108,13 @@ func (r Reconciler) searchForAnnotatedIngresses() ([]*types.NamespacedName, erro
 		return nil, r.log.ErrorfNewErr("Error listing ingresses: %v", err)
 	}
 	for _, ingress := range ingressList.Items {
-		if ingress.Annotations == nil || ingress.Annotations[vzDnsAnnotation] != "true" {
+		if isAnnotated(&ingress) {
 			NSNs = append(NSNs, &types.NamespacedName{Namespace: ingress.Namespace, Name: ingress.Name})
 		}
 	}
 	return NSNs, nil
+}
+
+func isAnnotated(ingress *k8net.Ingress) bool {
+	return ingress.Annotations != nil && strings.Contains(ingress.Annotations[vzDnsAnnotation], "true")
 }

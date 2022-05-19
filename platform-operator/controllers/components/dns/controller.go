@@ -26,8 +26,19 @@ import (
 
 const (
 	finalizerName   = "dns.verrazzano.io"
-	vzDnsAnnotation = "dns.verrazzano.io/host"
+	vzDnsAnnotation = "dns.verrazzano.io/set-host"
 )
+
+func NewReconciler(client client.Client, scheme *runtime.Scheme) *Reconciler {
+	return &Reconciler{
+		Client:       client,
+		Scheme:       scheme,
+		Controller:   nil,
+		log:          nil,
+		WatchMutex:   &sync.RWMutex{},
+		ingressNames: nil,
+	}
+}
 
 // SetupWithManager creates a new controller and adds it to the manager
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
@@ -107,6 +118,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 // Reconcile reconciles a DNS object
 func (r *Reconciler) doReconcile(ctx context.Context, log vzlog.VerrazzanoLogger, cr *dnsapi.DNS) (ctrl.Result, error) {
+	if err := r.init(cr.Namespace, cr.Name); err != nil {
+		return ctrl.Result{}, err
+	}
+
 	if !cr.ObjectMeta.DeletionTimestamp.IsZero() {
 		// Finalizer is present, so lets do the cluster deletion
 		if vzstring.SliceContainsString(cr.ObjectMeta.Finalizers, finalizerName) {
@@ -147,7 +162,7 @@ func (r *Reconciler) reconcileDNSDelete(ctx context.Context, cr *dnsapi.DNS) err
 	return nil
 }
 
-func (r Reconciler) init(namespace string, name string, log vzlog.VerrazzanoLogger) error {
+func (r Reconciler) init(namespace string, name string) error {
 	if initialized {
 		return nil
 	}

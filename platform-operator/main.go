@@ -189,10 +189,8 @@ func main() {
 	}
 
 	// Setup the reconciler for DNS objects
-	if err = (&dnscontroller.Reconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
+	rd := dnscontroller.NewReconciler(mgr.GetClient(), mgr.GetScheme())
+	if err := rd.SetupWithManager(mgr); err != nil {
 		log.Error(err, "Failed to setup controller ", vzlog.FieldController, "DNS")
 		os.Exit(1)
 	}
