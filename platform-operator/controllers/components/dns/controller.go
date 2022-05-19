@@ -5,14 +5,17 @@ package dns
 
 import (
 	"context"
+	"sync"
 	"time"
+
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+
+	k8net "k8s.io/api/networking/v1"
 
 	vzctrl "github.com/verrazzano/verrazzano/pkg/controller"
 	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
-
 	vzstring "github.com/verrazzano/verrazzano/pkg/string"
 	dnsapi "github.com/verrazzano/verrazzano/platform-operator/apis/components/dns/v1alpha1"
-	"github.com/verrazzano/verrazzano/platform-operator/constants"
 	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -21,22 +24,33 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-const finalizerName = "dns.verrazzano.io"
+const (
+	finalizerName   = "dns.verrazzano.io"
+	vzDnsAnnotation = "dns.verrazzano.io/host"
+)
 
 // SetupWithManager creates a new controller and adds it to the manager
-func (r *DNSReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
+func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
+	var err error
+	r.Controller, err = ctrl.NewControllerManagedBy(mgr).
 		For(&dnsapi.DNS{}).
-		Complete(r)
+		Build(r)
+
+	return err
 }
 
-// DNSReconciler reconciles a DNS object.
+var initialized bool
+
+// Reconciler reconciles a DNS object.
 // The reconciler will create a ServiceAcount, RoleBinding, and a Secret which
 // contains the kubeconfig to be used by the Multi-Cluster Agent to access the admin cluster.
-type DNSReconciler struct {
+type Reconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
-	log    vzlog.VerrazzanoLogger
+	Scheme     *runtime.Scheme
+	Controller controller.Controller
+	log        vzlog.VerrazzanoLogger
+	WatchMutex *sync.RWMutex
+	ingresses  []*k8net.Ingress
 }
 
 // bindingParams used to mutate the RoleBinding
@@ -46,7 +60,7 @@ type bindingParams struct {
 	serviceAccountName string
 }
 
-func (r *DNSReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	// Get the  resource
 	if ctx == nil {
 		ctx = context.TODO()
@@ -100,8 +114,7 @@ func (r *DNSReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 }
 
 // Reconcile reconciles a DNS object
-func (r *DNSReconciler) doReconcile(ctx context.Context, log vzlog.VerrazzanoLogger, cr *dnsapi.DNS) (ctrl.Result, error) {
-
+func (r *Reconciler) doReconcile(ctx context.Context, log vzlog.VerrazzanoLogger, cr *dnsapi.DNS) (ctrl.Result, error) {
 	if !cr.ObjectMeta.DeletionTimestamp.IsZero() {
 		// Finalizer is present, so lets do the cluster deletion
 		if vzstring.SliceContainsString(cr.ObjectMeta.Finalizers, finalizerName) {
@@ -129,7 +142,7 @@ func (r *DNSReconciler) doReconcile(ctx context.Context, log vzlog.VerrazzanoLog
 		}
 	}
 
-	return ctrl.Result{Requeue: true, RequeueAfter: constants.ReconcileLoopRequeueInterval}, nil
+	return r.reconcileDNS(ctx, cr, log)
 }
 
 // Create a new Result that will cause a reconcile requeue after a short delay
@@ -138,6 +151,17 @@ func newRequeueWithDelay() ctrl.Result {
 }
 
 // reconcileManagedClusterDelete performs all necessary cleanup during cluster deletion
-func (r *DNSReconciler) reconcileDNSDelete(ctx context.Context, vmc *dnsapi.DNS) error {
+func (r *Reconciler) reconcileDNSDelete(ctx context.Context, cr *dnsapi.DNS) error {
+	return nil
+}
+
+func (r Reconciler) init(namespace string, name string, log vzlog.VerrazzanoLogger) error {
+	if initialized {
+		return nil
+	}
+	if err := r.watchIngress(namespace, name); err != nil {
+		return err
+	}
+	initialized = true
 	return nil
 }

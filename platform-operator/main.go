@@ -189,7 +189,7 @@ func main() {
 	}
 
 	// Setup the reconciler for DNS objects
-	if err = (&dnscontroller.DNSReconciler{
+	if err = (&dnscontroller.Reconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {

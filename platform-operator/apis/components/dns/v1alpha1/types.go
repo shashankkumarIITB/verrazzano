@@ -10,12 +10,17 @@ import (
 
 // DNSSpec defines the desired state of DNS
 type DNSSpec struct {
+	// Subdomain - example subdomain.128.1.2.3.nip.io
+	Subdomain string `json:"subdomain,omitempty"`
+
 	// DNS type of wildcard.  This is the default.
 	// +optional
 	Wildcard *Wildcard `json:"wildcard,omitempty"`
+
 	// DNS type of OCI (Oracle Cloud Infrastructure)
 	// +optional
 	OCI *OCI `json:"oci,omitempty"`
+
 	// DNS type of external. For example, OLCNE uses this type.
 	// +optional
 	External *External `json:"external,omitempty"`
@@ -23,6 +28,8 @@ type DNSSpec struct {
 
 // DNSStatus defines the observed state of DNS
 type DNSStatus struct {
+	// The full domain name
+	DomainName string `json:"state,omitempty"`
 	// The latest available observations of an object's current state.
 	Conditions []Condition `json:"conditions,omitempty"`
 	// State of the DNS custom resource
@@ -45,10 +52,19 @@ type Condition struct {
 // ConditionType identifies the condition of the install/uninstall/upgrade which can be checked with kubectl wait
 type ConditionType string
 
+// ResourceName
+type ResourceName struct {
+	Namespace string `json:"namespace"`
+	Name      string `json:"name"`
+}
+
 // Wildcard DNS type
 type Wildcard struct {
 	// DNS wildcard domain (nip.io, sslip.io, etc.)
 	Domain string `json:"domain"`
+
+	// Service which has the IP to use
+	Service ResourceName `json:"service,omitempty"`
 }
 
 // OCI DNS type
@@ -68,7 +84,6 @@ type External struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:subresource:status
 // +genclient
 type DNS struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -83,4 +98,8 @@ type DNSList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []DNS `json:"items"`
+}
+
+func init() {
+	SchemeBuilder.Register(&DNS{}, &DNSList{})
 }
