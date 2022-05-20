@@ -6,6 +6,7 @@ package helm
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os/exec"
 	"regexp"
 	"strings"
@@ -148,6 +149,14 @@ func Upgrade(log vzlog.VerrazzanoLogger, releaseName string, namespace string, c
 	for _, override := range overrides {
 		// Add file overrides
 		if len(override.FileOverride) > 0 {
+			b, err := ioutil.ReadFile(override.FileOverride)
+			if err != nil {
+				fmt.Print(err)
+			}
+			str := string(b)
+			fmt.Println("------------------------------------------------------------------")
+			fmt.Println(str)
+			fmt.Println("------------------------------------------------------------------")
 			args = append(args, "-f")
 			args = append(args, override.FileOverride)
 		}
