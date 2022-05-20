@@ -1,18 +1,20 @@
 # Copyright (c) 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-{{- if .Values.enabled }}
+{{- if .Values.dns.enabled }}
 apiVersion: dns.verrazzano.io/v1alpha1
 kind: DNS
 metadata:
-  name: {{ .Values.name }}
+  name: {{ .Values.dns.name }}
   namespace: {{ .Release.Namespace }}
+  {{- with .Values.dns.labels }}
   labels:
-    {{- include "ingress.labels" . | nindent 4 }}
-  {{- with .Values.annotations }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.dns.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  subdomain: {{ .Values.subdomain }}
+  subdomain: {{ .Values.dns.subdomain }}
 {{- end }}
