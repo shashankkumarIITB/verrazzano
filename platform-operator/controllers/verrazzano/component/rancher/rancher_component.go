@@ -253,8 +253,9 @@ func (r rancherComponent) PostInstall(ctx spi.ComponentContext) error {
 	if err := rest.PutServerURL(); err != nil {
 		return log.ErrorfThrottledNewErr("Error setting Rancher server URL: %s", err.Error())
 	}
-	if err := removeBootstrapSecretIfExists(log, c); err != nil {
-		return log.ErrorfThrottledNewErr("Error removing Rancher bootstrap secret: %s", err.Error())
-	}
+	// Comment out the code to delete the bootstrap-secret, temporarily for testing
+	//if err := removeBootstrapSecretIfExists(log, c); err != nil {
+	//	return log.ErrorfThrottledNewErr("Error removing Rancher bootstrap secret: %s", err.Error())
+	//}
 	return r.HelmComponent.PostInstall(ctx)
 }
