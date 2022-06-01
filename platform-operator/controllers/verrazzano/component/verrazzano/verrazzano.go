@@ -18,7 +18,6 @@ import (
 	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/common"
 	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/console"
 	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
-	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/secret"
 	"github.com/verrazzano/verrazzano/platform-operator/internal/k8s/namespace"
 	"github.com/verrazzano/verrazzano/platform-operator/internal/vzconfig"
 
@@ -39,8 +38,6 @@ const (
 	tmpSuffix            = "yaml"
 	tmpFileCreatePattern = tmpFilePrefix + "*." + tmpSuffix
 	tmpFileCleanPattern  = tmpFilePrefix + ".*\\." + tmpSuffix
-
-	nodeExporterDaemonset = "node-exporter"
 )
 
 var (
@@ -67,9 +64,6 @@ func isVerrazzanoReady(ctx spi.ComponentContext) bool {
 
 // VerrazzanoPreUpgrade contains code that is run prior to helm upgrade for the Verrazzano helm chart
 func verrazzanoPreUpgrade(ctx spi.ComponentContext, namespace string) error {
-	if err := importToHelmChart(ctx.Client()); err != nil {
-		return err
-	}
 	if err := exportFromHelmChart(ctx.Client()); err != nil {
 		return err
 	}
@@ -88,15 +82,6 @@ func createAndLabelNamespaces(ctx spi.ComponentContext) error {
 	}
 	if err := namespace.CreateVerrazzanoMultiClusterNamespace(ctx.Client()); err != nil {
 		return err
-	}
-	if vzconfig.IsVMOEnabled(ctx.EffectiveCR()) {
-		// If the monitoring operator is enabled, create the monitoring namespace and copy the image pull secret
-		if err := namespace.CreateVerrazzanoMonitoringNamespace(ctx.Client()); err != nil {
-			return ctx.Log().ErrorfNewErr("Failed creating Verrazzano Monitoring namespace: %v", err)
-		}
-		if _, err := secret.CheckImagePullSecret(ctx.Client(), globalconst.VerrazzanoMonitoringNamespace); err != nil {
-			return ctx.Log().ErrorfNewErr("Failed checking for image pull secret: %v", err)
-		}
 	}
 	if vzconfig.IsKeycloakEnabled(ctx.EffectiveCR()) {
 		istio := ctx.EffectiveCR().Spec.Components.Istio
@@ -132,35 +117,6 @@ func cleanTempFiles(ctx spi.ComponentContext) {
 	if err := vzos.RemoveTempFiles(ctx.Log().GetZapLogger(), tmpFileCleanPattern); err != nil {
 		ctx.Log().Errorf("Failed deleting temp files: %v", err)
 	}
-}
-
-// importToHelmChart annotates any existing objects that should be managed by helm
-func importToHelmChart(cli clipkg.Client) error {
-	namespacedName := types.NamespacedName{Name: nodeExporter, Namespace: globalconst.VerrazzanoMonitoringNamespace}
-	name := types.NamespacedName{Name: nodeExporter}
-	objects := []clipkg.Object{
-		&appsv1.DaemonSet{},
-		&corev1.ServiceAccount{},
-		&corev1.Service{},
-	}
-
-	noNamespaceObjects := []clipkg.Object{
-		&rbacv1.ClusterRole{},
-		&rbacv1.ClusterRoleBinding{},
-	}
-
-	for _, obj := range objects {
-		if _, err := associateHelmObjectToThisRelease(cli, obj, namespacedName); err != nil {
-			return err
-		}
-	}
-
-	for _, obj := range noNamespaceObjects {
-		if _, err := associateHelmObjectToThisRelease(cli, obj, name); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 // exportFromHelmChart annotates any existing objects that should be managed by another helm component, e.g.

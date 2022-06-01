@@ -26,7 +26,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	istioclinet "istio.io/client-go/pkg/apis/networking/v1alpha3"
 	istioclisec "istio.io/client-go/pkg/apis/security/v1beta1"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -683,21 +682,10 @@ func TestAssociateHelmObjectAndKeep(t *testing.T) {
 
 // TestIsReadySecretNotReady tests the Verrazzano isVerrazzanoReady call
 // GIVEN a Verrazzano component
-//  WHEN I call isVerrazzanoReady when it is installed and the deployment availability criteria are met, but the secret is not found
+//  WHEN I call isVerrazzanoReady when it is installed but the secret is not found
 //  THEN false is returned
 func TestIsReadySecretNotReady(t *testing.T) {
-	c := fake.NewClientBuilder().WithScheme(testScheme).WithObjects(
-		&appsv1.DaemonSet{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: globalconst.VerrazzanoMonitoringNamespace,
-				Name:      nodeExporterDaemonset,
-			},
-			Status: appsv1.DaemonSetStatus{
-				UpdatedNumberScheduled: 1,
-				NumberAvailable:        1,
-			},
-		},
-	).Build()
+	c := fake.NewClientBuilder().WithScheme(testScheme).Build()
 	ctx := spi.NewFakeContext(c, &vzapi.Verrazzano{}, false)
 	assert.False(t, isVerrazzanoReady(ctx))
 }
@@ -718,16 +706,6 @@ func TestIsReadyChartNotInstalled(t *testing.T) {
 //  THEN false is returned
 func TestIsReady(t *testing.T) {
 	c := fake.NewClientBuilder().WithScheme(testScheme).WithObjects(
-		&appsv1.DaemonSet{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: globalconst.VerrazzanoMonitoringNamespace,
-				Name:      nodeExporterDaemonset,
-			},
-			Status: appsv1.DaemonSetStatus{
-				UpdatedNumberScheduled: 1,
-				NumberAvailable:        1,
-			},
-		},
 		&corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "verrazzano",
 			Namespace: ComponentNamespace}},
 	).Build()
