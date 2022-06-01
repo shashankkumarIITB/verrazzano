@@ -5,8 +5,9 @@ package verrazzano
 
 import (
 	"fmt"
-	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/fluentd"
 	"path/filepath"
+
+	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/fluentd"
 
 	vzapi "github.com/verrazzano/verrazzano/platform-operator/apis/verrazzano/v1alpha1"
 	"github.com/verrazzano/verrazzano/platform-operator/constants"
@@ -20,7 +21,6 @@ import (
 	"github.com/verrazzano/verrazzano/platform-operator/internal/config"
 	"github.com/verrazzano/verrazzano/platform-operator/internal/vzconfig"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -150,12 +150,12 @@ func (c verrazzanoComponent) PostUpgrade(ctx spi.ComponentContext) error {
 			return err
 		}
 	}
-
 	if vzconfig.IsFluentdEnabled(ctx.EffectiveCR()) {
 		if err := fluentd.ReassociateResources(ctx.Client()); err != nil {
 			return err
 		}
 	}
+	removeNodeExporterResources(ctx)
 	return c.HelmComponent.PostUpgrade(ctx)
 }
 
