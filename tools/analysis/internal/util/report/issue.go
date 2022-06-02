@@ -95,18 +95,19 @@ func (issue *Issue) Validate(log *zap.SugaredLogger, mapSource string) (err erro
 
 // Known Issue Types.
 const (
-	ImagePullBackOff          = "ImagePullBackOff"
-	ImagePullRateLimit        = "ImagePullRateLimit"
-	ImagePullNotFound         = "ImagePullNotFound"
-	ImagePullService          = "ImagePullService"
-	InsufficientMemory        = "InsufficientMemory"
-	IngressInstallFailure     = "IngressInstallFailure"
-	IngressLBLimitExceeded    = "IngressLBLimitExceeded"
-	IngressNoLoadBalancerIP   = "IngressNoLoadBalancerIP"
-	IngressOciIPLimitExceeded = "IngressOciIPLimitExceeded"
-	InstallFailure            = "InstallFailure"
-	PendingPods               = "PendingPods"
-	PodProblemsNotReported    = "PodProblemsNotReported"
+	ImagePullBackOff           = "ImagePullBackOff"
+	ImagePullRateLimit         = "ImagePullRateLimit"
+	ImagePullNotFound          = "ImagePullNotFound"
+	ImagePullService           = "ImagePullService"
+	InsufficientMemory         = "InsufficientMemory"
+	IngressInstallFailure      = "IngressInstallFailure"
+	IngressLBLimitExceeded     = "IngressLBLimitExceeded"
+	IngressNoLoadBalancerIP    = "IngressNoLoadBalancerIP"
+	IngressOciIPLimitExceeded  = "IngressOciIPLimitExceeded"
+	InstallFailure             = "InstallFailure"
+	PendingPods                = "PendingPods"
+	PodProblemsNotReported     = "PodProblemsNotReported"
+	InstallFailureCompNotReady = "InstallFailureCompNotReady"
 )
 
 // NOTE: How we are handling the issues/actions/reporting is still very much evolving here. Currently supplying some
@@ -115,18 +116,19 @@ const (
 // Known Issue Templates. While analyzers are free to roll their own custom Issues, the preference for well-known issues is to capture them
 // here so they are more generally available.
 var knownIssues = map[string]Issue{
-	ImagePullBackOff:          {Type: ImagePullBackOff, Summary: "Failure(s) pulling images have been detected, however a specific root cause was not identified", Informational: false, Impact: 10, Confidence: 10, Actions: []Action{KnownActions[ImagePullBackOff]}},
-	ImagePullRateLimit:        {Type: ImagePullRateLimit, Summary: "Failure(s) pulling images have been detected due to an image pull rate limit", Informational: false, Impact: 10, Confidence: 10, Actions: []Action{KnownActions[ImagePullRateLimit]}},
-	ImagePullNotFound:         {Type: ImagePullNotFound, Summary: "Failure(s) pulling images have been detected due to the image not being found", Informational: false, Impact: 10, Confidence: 10, Actions: []Action{KnownActions[ImagePullNotFound]}},
-	ImagePullService:          {Type: ImagePullService, Summary: "Failure(s) pulling images have been detected due to the service not being available, the service may be unreachable or may be incorrectly specified", Informational: false, Impact: 10, Confidence: 10, Actions: []Action{KnownActions[ImagePullService]}},
-	InsufficientMemory:        {Type: InsufficientMemory, Summary: "Failure(s) due to insufficient memory on nodes have been detected", Informational: false, Impact: 10, Confidence: 10, Actions: []Action{KnownActions[InsufficientMemory]}},
-	IngressInstallFailure:     {Type: IngressInstallFailure, Summary: "Verrazzano install failed while installing the NGINX Ingress Controller, however a specific root cause was not identified", Informational: false, Impact: 10, Confidence: 10, Actions: []Action{KnownActions[IngressInstallFailure]}},
-	IngressLBLimitExceeded:    {Type: IngressLBLimitExceeded, Summary: "Verrazzano install failed while installing the NGINX Ingress Controller, the root cause appears to be that the load balancer service limit has been reached", Informational: false, Impact: 10, Confidence: 10, Actions: []Action{KnownActions[IngressLBLimitExceeded]}},
-	IngressNoLoadBalancerIP:   {Type: IngressNoLoadBalancerIP, Summary: "Verrazzano install failed while installing the NGINX Ingress Controller, the root cause appears to be the LoadBalancer is not there or is unable to set the ingress IP address on the NGINX Ingress service", Informational: false, Impact: 10, Confidence: 10, Actions: []Action{KnownActions[IngressNoLoadBalancerIP]}},
-	IngressOciIPLimitExceeded: {Type: IngressOciIPLimitExceeded, Summary: "Verrazzano install failed while installing the NGINX Ingress Controller, the root cause appears to be an OCI IP non-ephemeral address limit has been reached", Informational: false, Impact: 10, Confidence: 10, Actions: []Action{KnownActions[IngressOciIPLimitExceeded]}},
-	InstallFailure:            {Type: InstallFailure, Summary: "Verrazzano install failed, however a specific root cause was not identified", Informational: false, Impact: 10, Confidence: 10, Actions: []Action{KnownActions[InstallFailure]}},
-	PendingPods:               {Type: PendingPods, Summary: "Pods in a Pending state were detected. These may come up normally or there may be specific issues preventing them from coming up", Informational: true, Impact: 0, Confidence: 1, Actions: []Action{KnownActions[PendingPods]}},
-	PodProblemsNotReported:    {Type: PodProblemsNotReported, Summary: "Problem pods were detected, however a specific root cause was not identified", Informational: true, Impact: 0, Confidence: 10, Actions: []Action{KnownActions[PodProblemsNotReported]}},
+	ImagePullBackOff:           {Type: ImagePullBackOff, Summary: "Failure(s) pulling images have been detected, however a specific root cause was not identified", Informational: false, Impact: 10, Confidence: 10, Actions: []Action{KnownActions[ImagePullBackOff]}},
+	ImagePullRateLimit:         {Type: ImagePullRateLimit, Summary: "Failure(s) pulling images have been detected due to an image pull rate limit", Informational: false, Impact: 10, Confidence: 10, Actions: []Action{KnownActions[ImagePullRateLimit]}},
+	ImagePullNotFound:          {Type: ImagePullNotFound, Summary: "Failure(s) pulling images have been detected due to the image not being found", Informational: false, Impact: 10, Confidence: 10, Actions: []Action{KnownActions[ImagePullNotFound]}},
+	ImagePullService:           {Type: ImagePullService, Summary: "Failure(s) pulling images have been detected due to the service not being available, the service may be unreachable or may be incorrectly specified", Informational: false, Impact: 10, Confidence: 10, Actions: []Action{KnownActions[ImagePullService]}},
+	InsufficientMemory:         {Type: InsufficientMemory, Summary: "Failure(s) due to insufficient memory on nodes have been detected", Informational: false, Impact: 10, Confidence: 10, Actions: []Action{KnownActions[InsufficientMemory]}},
+	IngressInstallFailure:      {Type: IngressInstallFailure, Summary: "Verrazzano install failed while installing the NGINX Ingress Controller, however a specific root cause was not identified", Informational: false, Impact: 10, Confidence: 10, Actions: []Action{KnownActions[IngressInstallFailure]}},
+	IngressLBLimitExceeded:     {Type: IngressLBLimitExceeded, Summary: "Verrazzano install failed while installing the NGINX Ingress Controller, the root cause appears to be that the load balancer service limit has been reached", Informational: false, Impact: 10, Confidence: 10, Actions: []Action{KnownActions[IngressLBLimitExceeded]}},
+	IngressNoLoadBalancerIP:    {Type: IngressNoLoadBalancerIP, Summary: "Verrazzano install failed while installing the NGINX Ingress Controller, the root cause appears to be the LoadBalancer is not there or is unable to set the ingress IP address on the NGINX Ingress service", Informational: false, Impact: 10, Confidence: 10, Actions: []Action{KnownActions[IngressNoLoadBalancerIP]}},
+	IngressOciIPLimitExceeded:  {Type: IngressOciIPLimitExceeded, Summary: "Verrazzano install failed while installing the NGINX Ingress Controller, the root cause appears to be an OCI IP non-ephemeral address limit has been reached", Informational: false, Impact: 10, Confidence: 10, Actions: []Action{KnownActions[IngressOciIPLimitExceeded]}},
+	InstallFailure:             {Type: InstallFailure, Summary: "Verrazzano install failed, however a specific root cause was not identified", Informational: false, Impact: 10, Confidence: 10, Actions: []Action{KnownActions[InstallFailure]}},
+	InstallFailureCompNotReady: {Type: InstallFailure, Summary: "Verrazzano install failed, one or more components did not reach Ready state", Informational: false, Impact: 10, Confidence: 10, Actions: []Action{KnownActions[InstallFailure]}},
+	PendingPods:                {Type: PendingPods, Summary: "Pods in a Pending state were detected. These may come up normally or there may be specific issues preventing them from coming up", Informational: true, Impact: 0, Confidence: 1, Actions: []Action{KnownActions[PendingPods]}},
+	PodProblemsNotReported:     {Type: PodProblemsNotReported, Summary: "Problem pods were detected, however a specific root cause was not identified", Informational: true, Impact: 0, Confidence: 10, Actions: []Action{KnownActions[PodProblemsNotReported]}},
 }
 
 // NewKnownIssueSupportingData adds a known issue

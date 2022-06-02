@@ -5,6 +5,7 @@
 package files
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"go.uber.org/zap"
@@ -13,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 )
 
 // GetMatchingFiles returns the filenames for files that match a regular expression.
@@ -108,4 +110,45 @@ func FindFileInNamespace(clusterRoot string, namespace string, filename string) 
 // FindPodLogFileName will find the name of the log file given a pod
 func FindPodLogFileName(clusterRoot string, pod corev1.Pod) string {
 	return fmt.Sprintf("%s/%s/%s/logs.txt", clusterRoot, pod.ObjectMeta.Namespace, pod.ObjectMeta.Name)
+}
+
+// The logs.txt for the platform-operator contains each message a json object. But the file logs.txt is not a well-formed
+// json, it contains lines starting with "==== START", "==== END", etc. In one of the runs, found a line which is not a json element -
+// I0525 13:17:45.742214       7 request.go:665] Waited for 1.04634193s due to client-side throttling, not priority and fairness, request: GET:https://10.96.0.1:443/apis/admissionregistration.k8s.io/v1?timeout=32s
+// Also each of the json elements are not part of an array and so there is no comma. This function creates a well-formed json from the logs.txt, using the warning and error messages
+func ConvertVPOLogToJson(logDir, logFile, jsonFile string) error {
+	vpoLog := fmt.Sprintf("%s/%s", logDir, logFile)
+	fileInfo, err := os.Stat(vpoLog)
+	if err != nil || fileInfo.Size() == 0 {
+		fmt.Sprintf("file %s is either empty or there is an issue in getting the file info about it", vpoLog)
+		return err
+	}
+
+	file, err := os.Open(vpoLog)
+	if err != nil {
+		fmt.Sprintf("file %s not found", vpoLog)
+		return err
+	}
+
+	defer file.Close()
+	scanner := bufio.NewScanner(file)
+	scanner.Split(bufio.ScanLines)
+	outputJson := logDir + "/" + jsonFile
+	outFile, err := os.Create(outputJson)
+	if err != nil {
+		fmt.Sprintf("could not create the file %s", outFile)
+		return err
+	}
+	defer outFile.Close()
+
+	// Create the json containing an array of json elements, representing individual log messages
+	fmt.Fprintln(outFile, "[")
+	for scanner.Scan() {
+		// How about just getting the error message
+		if strings.HasPrefix(scanner.Text(), "{\"level\":\"error\"") ||  strings.HasPrefix(scanner.Text(), "{\"level\":\"warn\"") {
+			fmt.Fprintln(outFile, scanner.Text()+",")
+		}
+	}
+	fmt.Fprintln(outFile, "]")
+	return nil
 }

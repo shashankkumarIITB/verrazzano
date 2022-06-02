@@ -5,11 +5,15 @@
 package cluster
 
 import (
+	encjson "encoding/json"
+	installv1alpha1 "github.com/verrazzano/verrazzano/platform-operator/apis/verrazzano/v1alpha1"
 	"github.com/verrazzano/verrazzano/tools/analysis/internal/util/files"
 	"github.com/verrazzano/verrazzano/tools/analysis/internal/util/report"
 	"go.uber.org/zap"
+	"io/ioutil"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"os"
 	"regexp"
 	"strings"
 )
@@ -34,6 +38,9 @@ var verrazzanoUninstallJobPodMatcher = regexp.MustCompile("verrazzano-uninstall-
 // verrazzanoDeployments related to verrazzano
 var verrazzanoDeployments = make(map[string]appsv1.Deployment)
 var problematicVerrazzanoDeploymentNames = make([]string, 0)
+var componentsNotInReadyState = make([]string, 0)
+
+const verrazzanoResource = "verrazzano_resources.json"
 
 var verrazzanoAnalysisFunctions = map[string]func(log *zap.SugaredLogger, clusterRoot string, issueReporter *report.IssueReporter) (err error){
 	"Installation status": installationStatus,
@@ -67,12 +74,28 @@ func installationStatus(log *zap.SugaredLogger, clusterRoot string, issueReporte
 	//      uninstall-success-but-cruft-remaining, etc...
 	// The intention is that we should at least give an Informational on what the state is.
 
+	isInstallComplete, err := isInstallComplete(log, clusterRoot)
+	if err != nil {
+		return err
+	}
+	if !isInstallComplete {
+		messages := make(StringSlice, 1)
+		messages[0] = "Verrazzano installation is not complete for the following components:"
+		for _, comp := range componentsNotInReadyState {
+			messages = append(messages, "\t " + comp)
+		}
+		files := make(StringSlice, 1)
+		files[0] = clusterRoot + "/" + verrazzanoResource
+		issueReporter.AddKnownIssueMessagesFiles(report.InstallFailureCompNotReady, clusterRoot, messages, files)
+	}
+
 	// Enumerate the namespaces that we found overall and the Verrazzano specific ones separately
 	// Also look at the deployments in the Verrazzano related namespaces
 	allNamespacesFound, err = files.FindNamespaces(log, clusterRoot)
 	if err != nil {
 		return err
 	}
+
 	for _, namespace := range allNamespacesFound {
 		// These are Verrazzano owned namespaces
 		if strings.Contains(namespace, "verrazzano") {
@@ -108,10 +131,65 @@ func installationStatus(log *zap.SugaredLogger, clusterRoot string, issueReporte
 
 	// TODO: verrazzanoApiResourceMatches := files.SearchFile(log, files.FindFileInCluster(cluserRoot, "api_resources.out"), ".*verrazzano.*")
 	// TODO: verrazzanoResources (json file)
+	// What are we doing with problematicVerrazzanoDeploymentNames ?
 
 	return nil
 }
 
+func isInstallComplete(log *zap.SugaredLogger, clusterRoot string) (bool, error) {
+	vzResourcesPath := files.FindFileInClusterRoot(clusterRoot, verrazzanoResource)
+	fileInfo, e := os.Stat(vzResourcesPath)
+	if e != nil || fileInfo.Size() == 0 {
+		log.Infof("Verrazzano resource file %s is either empty or there is an issue in getting the file info about it", vzResourcesPath)
+		return false, e
+	}
+
+	file, err := os.Open(vzResourcesPath)
+	if err != nil {
+		log.Infof("file %s not found", vzResourcesPath)
+		return false, err
+	}
+	defer file.Close()
+	fileBytes, err := ioutil.ReadAll(file)
+	if err != nil {
+		log.Infof("Failed reading Json file %s", vzResourcesPath)
+		return false, err
+	}
+
+	log.Infof("Length in bytes of the file %s",  len(fileBytes))
+	var vzResourceList installv1alpha1.VerrazzanoList
+	err = encjson.Unmarshal(fileBytes, &vzResourceList)
+	if err != nil {
+		log.Infof("Failed to unmarshal Verrazzano resource at %s", vzResourcesPath)
+		return false, err
+	}
+
+	if len(vzResourceList.Items) > 0 {
+		log.Infof("Size %s", len(vzResourceList.Items))
+		// There should be only one Verrazzano resource, so the first item from the list should be good enough
+		for _, vzRes := range vzResourceList.Items {
+			if vzRes.Status.State != installv1alpha1.VzStateReady {
+				log.Infof("Installation is not good, installation state %s", vzRes.Status.State)
+
+				// Verrazzano installation is not complete, find out the list of components which are not ready
+				for _, compStatusDetail := range vzRes.Status.Components {
+					if compStatusDetail.State != installv1alpha1.CompStateReady {
+						if compStatusDetail.State == installv1alpha1.CompStateDisabled {
+							continue
+						}
+						// Create the list of components which did not reach Ready state, so that we can look for the errors for the component in the platform operator log,
+						// and other artifacts for the component
+						componentsNotInReadyState = append(componentsNotInReadyState, compStatusDetail.Name)
+					}
+				}
+				return false, nil
+			}
+		}
+	}
+	return true, nil
+}
+
+// TODO: Don't need below functions, delete
 // IsVerrazzanoInstallJobPod returns true if the pod is an install job related pod for Verrazzano
 func IsVerrazzanoInstallJobPod(pod corev1.Pod) bool {
 	return verrazzanoInstallJobPodMatcher.MatchString(pod.ObjectMeta.Name) && (pod.ObjectMeta.Namespace == "verrazzano-install" || pod.ObjectMeta.Namespace == "default")
@@ -121,3 +199,4 @@ func IsVerrazzanoInstallJobPod(pod corev1.Pod) bool {
 func IsVerrazzanoUninstallJobPod(pod corev1.Pod) bool {
 	return verrazzanoUninstallJobPodMatcher.MatchString(pod.ObjectMeta.Name) && (pod.ObjectMeta.Namespace == "verrazzano-install" || pod.ObjectMeta.Namespace == "default")
 }
+
