@@ -6,10 +6,12 @@ package operator
 import (
 	"context"
 	"fmt"
+	"path"
 	"strconv"
 
 	vmoconst "github.com/verrazzano/verrazzano-monitoring-operator/pkg/constants"
 	"github.com/verrazzano/verrazzano/pkg/bom"
+	"github.com/verrazzano/verrazzano/pkg/k8sutil"
 	vzapi "github.com/verrazzano/verrazzano/platform-operator/apis/verrazzano/v1alpha1"
 	"github.com/verrazzano/verrazzano/platform-operator/constants"
 	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/common"
@@ -20,6 +22,7 @@ import (
 	"github.com/verrazzano/verrazzano/platform-operator/internal/vzconfig"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 )
@@ -55,6 +58,33 @@ func preInstall(ctx spi.ComponentContext) error {
 		return nil
 	}); err != nil {
 		return ctx.Log().ErrorfNewErr("Failed to create or update the %s namespace: %v", ComponentNamespace, err)
+	}
+
+	// Create an empty secret for the additional scrape configs - this secret gets populated with scrape jobs for managed clusters
+	return ensureAdditionalScrapeConfigsSecret(ctx)
+}
+
+// ensureAdditionalScrapeConfigsSecret creates an empty secret for additional scrape configurations loaded by Prometheus, if the secret
+// does not already exist. Initially this secret is empty but when managed clusters are created, the federated scrape configuration
+// is added to this secret.
+func ensureAdditionalScrapeConfigsSecret(ctx spi.ComponentContext) error {
+	ctx.Log().Debugf("Creating or updating secret %s for Prometheus additional scrape configs", constants.PromAdditionalScrapeConfigsSecretName)
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      constants.PromAdditionalScrapeConfigsSecretName,
+			Namespace: ComponentNamespace,
+		},
+	}
+	if _, err := controllerruntime.CreateOrUpdate(context.TODO(), ctx.Client(), secret, func() error {
+		if secret.Data == nil {
+			secret.Data = make(map[string][]byte)
+		}
+		if _, exists := secret.Data[constants.PromAdditionalScrapeConfigsSecretKey]; !exists {
+			secret.Data[constants.PromAdditionalScrapeConfigsSecretKey] = []byte{}
+		}
+		return nil
+	}); err != nil {
+		return ctx.Log().ErrorfNewErr("Failed to create or update the %s secret: %v", constants.PromAdditionalScrapeConfigsSecretName, err)
 	}
 	return nil
 }
@@ -115,6 +145,14 @@ func AppendOverrides(ctx spi.ComponentContext, _ string, _ string, _ string, kvs
 		kvs)
 	if err != nil {
 		return kvs, ctx.Log().ErrorfNewErr("Failed applying the Istio Overrides for Prometheus")
+	}
+
+	kvs, err = appendAdditionalVolumeOverrides(ctx,
+		"prometheus.prometheusSpec.volumeMounts",
+		"prometheus.prometheusSpec.volumes",
+		kvs)
+	if err != nil {
+		return kvs, ctx.Log().ErrorfNewErr("Failed applying additional volume overrides for Prometheus")
 	}
 	return kvs, nil
 }
@@ -229,4 +267,35 @@ func GetOverrides(effectiveCR *vzapi.Verrazzano) []vzapi.Overrides {
 		return effectiveCR.Spec.Components.PrometheusOperator.ValueOverrides
 	}
 	return []vzapi.Overrides{}
+}
+
+// appendAdditionalVolumeOverrides adds a volume and volume mount so we can mount managed cluster TLS certs from a secret in the Prometheus pod.
+// Initially the secret does not exist. When managed clusters are created, the secret is created and Prometheus TLS certs for the managed
+// clusters are added to the secret.
+func appendAdditionalVolumeOverrides(ctx spi.ComponentContext, volumeMountKey, volumeKey string, kvs []bom.KeyValue) ([]bom.KeyValue, error) {
+	kvs = append(kvs, bom.KeyValue{Key: fmt.Sprintf("%s[1].name", volumeMountKey), Value: "managed-cluster-ca-certs"})
+	kvs = append(kvs, bom.KeyValue{Key: fmt.Sprintf("%s[1].mountPath", volumeMountKey), Value: "/etc/prometheus/managed-cluster-ca-certs"})
+	kvs = append(kvs, bom.KeyValue{Key: fmt.Sprintf("%s[1].readOnly", volumeMountKey), Value: "true"})
+
+	kvs = append(kvs, bom.KeyValue{Key: fmt.Sprintf("%s[1].name", volumeKey), Value: "managed-cluster-ca-certs"})
+	kvs = append(kvs, bom.KeyValue{Key: fmt.Sprintf("%s[1].secret.secretName", volumeKey), Value: constants.PromManagedClusterCACertsSecretName})
+	kvs = append(kvs, bom.KeyValue{Key: fmt.Sprintf("%s[1].secret.optional", volumeKey), Value: "true"})
+
+	return kvs, nil
+}
+
+// applySystemMonitors applies templatized PodMonitor and ServiceMonitor custom resources for Verrazzano system
+// components to the cluster
+func applySystemMonitors(ctx spi.ComponentContext) error {
+	// create template key/value map
+	args := make(map[string]interface{})
+	args["systemNamespace"] = constants.VerrazzanoSystemNamespace
+	args["monitoringNamespace"] = constants.VerrazzanoMonitoringNamespace
+	args["nginxNamespace"] = constants.IngressNginxNamespace
+	args["istioNamespace"] = constants.IstioSystemNamespace
+
+	// substitute template values to all files in the directory and apply the resulting YAML
+	dir := path.Join(config.GetThirdPartyManifestsDir(), "prometheus-operator")
+	yamlApplier := k8sutil.NewYAMLApplier(ctx.Client(), "")
+	return yamlApplier.ApplyDT(dir, args)
 }
