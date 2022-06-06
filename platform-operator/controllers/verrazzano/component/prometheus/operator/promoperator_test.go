@@ -762,7 +762,7 @@ func TestRemoveOldClaimFromPrometheusVolume(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: volumeName,
 				Labels: map[string]string{
-					"verrazzano.io/storage-for": "prometheus",
+					constants.StorageForLabel: constants.PrometheusStorageLabelValue,
 				},
 			},
 			Spec: corev1.PersistentVolumeSpec{
@@ -808,7 +808,7 @@ func TestRemoveOldClaimFromPrometheusVolume(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: volumeName,
 				Labels: map[string]string{
-					"verrazzano.io/storage-for": "prometheus",
+					constants.StorageForLabel: constants.PrometheusStorageLabelValue,
 				},
 			},
 			Spec: corev1.PersistentVolumeSpec{
@@ -840,7 +840,7 @@ func TestRemoveOldClaimFromPrometheusVolume(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: volumeName,
 				Labels: map[string]string{
-					"verrazzano.io/storage-for": "prometheus",
+					constants.StorageForLabel: constants.PrometheusStorageLabelValue,
 				},
 			},
 			Spec: corev1.PersistentVolumeSpec{
@@ -874,8 +874,8 @@ func TestResetVolumeReclaimPolicy(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: volumeName,
 				Labels: map[string]string{
-					"verrazzano.io/storage-for":        "prometheus",
-					"verrazzano.io/old-reclaim-policy": "Delete",
+					constants.StorageForLabel:       constants.PrometheusStorageLabelValue,
+					constants.OldReclaimPolicyLabel: string(corev1.PersistentVolumeReclaimDelete),
 				},
 			},
 			Spec: corev1.PersistentVolumeSpec{
@@ -895,7 +895,7 @@ func TestResetVolumeReclaimPolicy(t *testing.T) {
 	err = client.Get(context.TODO(), types.NamespacedName{Name: volumeName}, pv)
 	assert.NoError(t, err)
 	assert.Equal(t, corev1.PersistentVolumeReclaimDelete, pv.Spec.PersistentVolumeReclaimPolicy)
-	assert.NotContains(t, pv.Labels, "verrazzano.io/old-reclaim-policy")
+	assert.NotContains(t, pv.Labels, constants.OldReclaimPolicyLabel)
 
 	// GIVEN a persistent volume that has an available status
 	// WHEN the resetVolumeReclaimPolicy function is called
@@ -905,8 +905,8 @@ func TestResetVolumeReclaimPolicy(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: volumeName,
 				Labels: map[string]string{
-					"verrazzano.io/storage-for":        "prometheus",
-					"verrazzano.io/old-reclaim-policy": "Delete",
+					constants.StorageForLabel:       constants.PrometheusStorageLabelValue,
+					constants.OldReclaimPolicyLabel: string(corev1.PersistentVolumeReclaimDelete),
 				},
 			},
 			Spec: corev1.PersistentVolumeSpec{
@@ -926,7 +926,7 @@ func TestResetVolumeReclaimPolicy(t *testing.T) {
 	err = client.Get(context.TODO(), types.NamespacedName{Name: volumeName}, pv)
 	assert.NoError(t, err)
 	assert.Equal(t, corev1.PersistentVolumeReclaimRetain, pv.Spec.PersistentVolumeReclaimPolicy)
-	assert.Contains(t, pv.Labels, "verrazzano.io/old-reclaim-policy")
+	assert.Contains(t, pv.Labels, constants.OldReclaimPolicyLabel)
 
 	// GIVEN a persistent volume that has a bound status
 	// WHEN the resetVolumeReclaimPolicy function is called and the call to update the volume fails
@@ -936,8 +936,8 @@ func TestResetVolumeReclaimPolicy(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: volumeName,
 				Labels: map[string]string{
-					"verrazzano.io/storage-for":        "prometheus",
-					"verrazzano.io/old-reclaim-policy": "Delete",
+					constants.StorageForLabel:       constants.PrometheusStorageLabelValue,
+					constants.OldReclaimPolicyLabel: string(corev1.PersistentVolumeReclaimDelete),
 				},
 			},
 			Spec: corev1.PersistentVolumeSpec{
@@ -967,7 +967,7 @@ func TestAppendResourceRequestOverrides(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "pvc-5ab58a05-71f9-4f09-8911-a5c029f6305f",
 				Labels: map[string]string{
-					"verrazzano.io/storage-for": "prometheus",
+					constants.StorageForLabel: constants.PrometheusStorageLabelValue,
 				},
 			},
 		}).Build()
