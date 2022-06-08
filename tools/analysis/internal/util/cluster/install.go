@@ -5,16 +5,21 @@
 package cluster
 
 import (
+	encjson "encoding/json"
 	"fmt"
+	installv1alpha1 "github.com/verrazzano/verrazzano/platform-operator/apis/verrazzano/v1alpha1"
 	"github.com/verrazzano/verrazzano/tools/analysis/internal/util/files"
 	"github.com/verrazzano/verrazzano/tools/analysis/internal/util/report"
 	"go.uber.org/zap"
+	"io/ioutil"
 	corev1 "k8s.io/api/core/v1"
+	"os"
 	"regexp"
+	"strings"
 )
 
 // Compiled Regular expressions
-var installNGINXIngressControllerFailedRe = regexp.MustCompile(`Installing NGINX Ingress Controller.*\[FAILED\]`)
+var installNGINXIngressControllerFailedRe = regexp.MustCompile(`Failed getting DNS suffix: No IP found for service ingress-controller-ingress-nginx-controller with type LoadBalancer`)
 var installFailedRe = regexp.MustCompile(`Install.*\[FAILED\]`)
 
 // I'm going with a more general pattern for limit reached as the supporting details should give the precise message
@@ -22,6 +27,25 @@ var installFailedRe = regexp.MustCompile(`Install.*\[FAILED\]`)
 // if we need a more precise match
 var ephemeralIPLimitReachedRe = regexp.MustCompile(`.*Limit for non-ephemeral regional public IP per tenant of .* has been already reached`)
 var lbServiceLimitReachedRe = regexp.MustCompile(`.*The following service limits were exceeded: lb-.*`)
+var failedToEnsureLoadBalancer = regexp.MustCompile(`.*failed to ensure load balancer: awaiting load balancer.*`)
+
+const verrazzanoResource = "verrazzano_resources.json"
+const installErrorNotFound = "No component specific error found in the install log"
+var componentErrorPattern = `\"level\":\"error\".*\"component\":\"vzcomponent\"`
+
+type LogMessage struct {
+	Level             string `json:"level"`
+	Timestamp         string `json:"@timestamp,omitempty"`
+	Caller            string `json:"caller,omitempty"`
+	Message           string `json:"message"`
+	ResourceNameSpace string `json:"resource_namespace,omitempty"`
+	ResourceName      string `json:"resource_name,omitempty"`
+	Controller        string `json:"controller,omitempty"`
+	Component         string `json:"component,omitempty"`
+	Operation         string `json:"operation,omitempty"`
+	Stacktrace        string `json:"stacktrace,omitempty"`
+}
+
 
 const (
 	// Service name
@@ -39,8 +63,22 @@ var dispatchFunctions = map[string]func(log *zap.SugaredLogger, clusterRoot stri
 	nginxIngressControllerFailed: analyzeNGINXIngressController,
 }
 
+func AnalyzeVerrazzanoInstallIssue(log *zap.SugaredLogger, clusterRoot string, issueReporter *report.IssueReporter) (err error) {
+	isInstallComplete, err := isInstallComplete(log, clusterRoot)
+	if err != nil {
+		return err
+	}
+
+	if !isInstallComplete {
+		reportInstallError(log, clusterRoot, issueReporter)
+	}
+	return nil
+}
+
 // AnalyzeVerrazzanoInstallIssue is called when we have reason to believe that the installation has failed
-func AnalyzeVerrazzanoInstallIssue(log *zap.SugaredLogger, clusterRoot string, podFile string, pod corev1.Pod, issueReporter *report.IssueReporter) (err error) {
+
+/*func AnalyzeVerrazzanoInstallIssues(log *zap.SugaredLogger, clusterRoot string, podFile string, pod corev1.Pod, issueReporter *report.IssueReporter) (err error) {
+	log.Infof(">>>> Inside AnalyzeVerrazzanoInstallIssue with podFile %s and pod %s", podFile, pod.Name)
 	// Skip if it is not the Verrazzano install job pod
 	if !IsVerrazzanoInstallJobPod(pod) {
 		return nil
@@ -86,6 +124,7 @@ func AnalyzeVerrazzanoInstallIssue(log *zap.SugaredLogger, clusterRoot string, p
 	}
 	return nil
 }
+*/
 
 func analyzeNGINXIngressController(log *zap.SugaredLogger, clusterRoot string, podFile string, pod corev1.Pod, issueReporter *report.IssueReporter) (err error) {
 	// TODO: We need to add in time range handling here. The timestamps from structured K8S JSON should already be there, but we will also need to
@@ -121,15 +160,16 @@ func analyzeNGINXIngressController(log *zap.SugaredLogger, clusterRoot string, p
 		//flags to make sure we're not capturing the same event message repeatedly
 		ephemeralIPLimitReachedCheck := false
 		lbServiceLimitReachedCheck := false
+		var errorSyncingLoadBalancerCheck bool
 
 		// Check if the event matches failure
-		log.Debugf("Found %d events", len(events))
+		log.Infof("Found %d events", len(events))
 		for _, event := range events {
-			log.Debugf("analyzeNGINXIngressController event Reason: %s", event.Reason)
+			log.Infof("analyzeNGINXIngressController event Reason: %s", event.Reason)
 			if !EventReasonFailedRe.MatchString(event.Reason) {
 				continue
 			}
-			log.Debugf("analyzeNGINXIngressController event Reason: %s", event.Message)
+			log.Infof("analyzeNGINXIngressController event Reason: %s", event.Message)
 			if ephemeralIPLimitReachedRe.MatchString(event.Message) && !ephemeralIPLimitReachedCheck {
 				messages := make(StringSlice, 1)
 				messages[0] = event.Message
@@ -150,6 +190,17 @@ func analyzeNGINXIngressController(log *zap.SugaredLogger, clusterRoot string, p
 				issueReporter.AddKnownIssueMessagesFiles(report.IngressLBLimitExceeded, clusterRoot, messages, files)
 				issueDetected = true
 				lbServiceLimitReachedCheck = true
+			} else if failedToEnsureLoadBalancer.MatchString(event.Message) && !errorSyncingLoadBalancerCheck {
+				fmt.Println("I AM HERE ", errorSyncingLoadBalancerCheck)
+				messages := make(StringSlice, 1)
+				messages[0] = event.Message
+				eventFile := files.FindFileInNamespace(clusterRoot, controllerService.ObjectMeta.Namespace, "events.json")
+				files := make(StringSlice, 2)
+				files[0] = podFile
+				files[1] = eventFile
+				issueReporter.AddKnownIssueMessagesFiles(report.IngressNoIPFound, clusterRoot, messages, files)
+				issueDetected = true
+				errorSyncingLoadBalancerCheck = true
 			}
 		}
 
@@ -192,5 +243,128 @@ func analyzeNGINXIngressController(log *zap.SugaredLogger, clusterRoot string, p
 		return nil
 	}
 
+	return nil
+}
+
+func isInstallComplete(log *zap.SugaredLogger, clusterRoot string) (bool, error) {
+	vzResourcesPath := files.FindFileInClusterRoot(clusterRoot, verrazzanoResource)
+	fileInfo, e := os.Stat(vzResourcesPath)
+	if e != nil || fileInfo.Size() == 0 {
+		log.Infof("Verrazzano resource file %s is either empty or there is an issue in getting the file info about it", vzResourcesPath)
+		return false, e
+	}
+
+	file, err := os.Open(vzResourcesPath)
+	if err != nil {
+		log.Infof("file %s not found", vzResourcesPath)
+		return false, err
+	}
+	defer file.Close()
+	fileBytes, err := ioutil.ReadAll(file)
+	if err != nil {
+		log.Infof("Failed reading Json file %s", vzResourcesPath)
+		return false, err
+	}
+
+	var vzResourceList installv1alpha1.VerrazzanoList
+	err = encjson.Unmarshal(fileBytes, &vzResourceList)
+	if err != nil {
+		log.Infof("Failed to unmarshal Verrazzano resource at %s", vzResourcesPath)
+		return false, err
+	}
+
+	if len(vzResourceList.Items) > 0 {
+		// There should be only one Verrazzano resource, so the first item from the list should be good enough
+		for _, vzRes := range vzResourceList.Items {
+			if vzRes.Status.State != installv1alpha1.VzStateReady {
+				log.Debugf("Installation is not good, installation state %s", vzRes.Status.State)
+
+				// Verrazzano installation is not complete, find out the list of components which are not ready
+				for _, compStatusDetail := range vzRes.Status.Components {
+					if compStatusDetail.State != installv1alpha1.CompStateReady {
+						if compStatusDetail.State == installv1alpha1.CompStateDisabled {
+							continue
+						}
+						// Create the list of components which did not reach Ready state, so that we can look for the errors for the component in the platform operator log,
+						// and other artifacts for the component
+						log.Debugf("Component %s is not in ready state, state is %s", compStatusDetail.Name, vzRes.Status.State)
+						componentsNotInReadyState = append(componentsNotInReadyState, compStatusDetail.Name)
+					}
+				}
+				return false, nil
+			}
+		}
+	}
+	return true, nil
+}
+
+func reportInstallError(log *zap.SugaredLogger, clusterRoot string, issueReporter *report.IssueReporter) error {
+	vpologRegExp := regexp.MustCompile(`verrazzano-install/verrazzano-platform-operator-.*/logs.txt`)
+	allPodFiles, err := files.GetMatchingFiles(log, clusterRoot, vpologRegExp)
+	if err != nil {
+		return err
+	}
+	// podList, _ := GetPodList(log, "/Users/pabhat/vz/work/VZ-4324/885/cluster-dump/ingress-nginx/pods.json")
+
+	// We should get only one pod file, use the first element rather than going through the slice
+	vpoLog := allPodFiles[0]
+	messages := make(StringSlice, 1)
+	messages[0] = "Verrazzano installation is not complete for the following components:"
+	// Go through all the components which did not reach Ready state
+	for _, comp := range componentsNotInReadyState {
+		regExpStr := strings.Replace(componentErrorPattern, "vzcomponent", comp, 1)
+		componentErrorMatcher := regexp.MustCompile(regExpStr)
+		logMatches, err := files.SearchFile(log, vpoLog, componentErrorMatcher, nil)
+		if err != nil {
+			log.Infof("There is an error searching the file %s for a regular expression: %s", vpoLog, err)
+		}
+		var allErrors []LogMessage
+		var logMessage LogMessage
+		for _, matched := range logMatches {
+			fileBytes := []byte(matched.MatchedText)
+			err = encjson.Unmarshal(fileBytes, &logMessage)
+			if err != nil {
+				log.Error("Error unmarshalling the json")
+				return err
+			}
+			allErrors = append(allErrors, logMessage)
+		}
+		errorMessage := installErrorNotFound
+		// For now, display only the last error for the component in the platform operator log
+		// Need a better way to handle distinct errors for a component, however some of the errors during the initial
+		// stage of the install might indicate any real issue, as reconcile takes care of healing those errors.
+		if len(allErrors) > 2 {
+			errorMessage = allErrors[len(allErrors)-1].Message
+		}
+		if len(allErrors) == 1 {
+			errorMessage = allErrors[0].Message
+		}
+		messages = append(messages, "\t " + comp + ": " + errorMessage)
+
+		/*for _, pod := range podList.Items {
+			if strings.HasPrefix(pod.Name, "ingress-controller-ingress-nginx-controller") {
+				podFile := "/Users/pabhat/vz/work/VZ-4324/885/cluster-dump/ingress-nginx/pods.json"
+				for matchKey, matcher := range dispatchMatchMap {
+					// log.Infof("Checking matcher: %s", matchKey)
+					// If the matcher expression matches the failure message, call the handler function related to that matcher (same key)
+					if matcher.MatchString("Failed getting DNS suffix: No IP found for service ingress-controller-ingress-nginx-controller with type LoadBalancer") {
+						// log.Infof("Dispatch to handler: %s", matchKey)
+
+						err = dispatchFunctions[matchKey](log, clusterRoot, podFile, pod, issueReporter)
+						if err != nil {
+							log.Errorf("AnalyzeVerrazzanoInstallIssue failed in %s function", matchKey, err)
+						}
+					}
+				}
+			}
+		}
+		fmt.Println("I AM HERE AS WELL")
+		*/
+
+	}
+	var files []string
+	files = append(files, clusterRoot + "/" + verrazzanoResource)
+	files = append(files, vpoLog)
+	issueReporter.AddKnownIssueMessagesFiles(report.InstallFailureCompNotReady, clusterRoot, messages, files)
 	return nil
 }
