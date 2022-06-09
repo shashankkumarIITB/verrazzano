@@ -75,7 +75,7 @@ var _ = t.AfterSuite(func() {
 		// Bobs Bookstore
 		pkg.DumpContainerLogs(namespace, "bobs-bookstore-adminserver", "weblogic-server", "/scratch/logs/bobs-orders-wls")
 		pkg.DumpContainerLogs(namespace, "bobs-bookstore-managed-server1", "weblogic-server", "/scratch/logs/bobs-orders-wls")
-		pkg.ExecuteClusterDumpWithEnvVarConfig()
+		pkg.ExecuteClusterDumpWithEnvVarSuffix(namespace)
 	}
 	if !skipUndeploy {
 		undeployBobsBooksExample()
