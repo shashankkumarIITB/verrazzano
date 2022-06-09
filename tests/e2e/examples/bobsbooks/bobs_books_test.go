@@ -68,6 +68,7 @@ var _ = t.AfterEach(func() {
 })
 
 var _ = t.AfterSuite(func() {
+	pkg.ExecuteClusterDumpWithEnvVarSuffix(namespace)
 	if failed || !beforeSuitePassed {
 		// bobbys frontend
 		pkg.DumpContainerLogs(namespace, "bobbys-front-end-adminserver", "weblogic-server", "/scratch/logs/bobbys-front-end")
