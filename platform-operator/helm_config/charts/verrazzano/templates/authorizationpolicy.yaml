@@ -32,11 +32,11 @@ spec:
       to:
         - operation:
             ports: ["{{ .Values.api.port }}"]
-    # verrazzano-authproxy:15090 <- vmi-system-prometheus (uses VMO SA)
+    # verrazzano-authproxy:15090 <- prometheus
     - from:
         - source:
-            namespaces: ["{{ .Release.Namespace }}"]
-            principals: ["cluster.local/ns/{{ .Release.Namespace }}/sa/{{ .Values.monitoringOperator.name }}"]
+            namespaces: ["{{ .Values.prometheus.namespace }}"]
+            principals: ["cluster.local/ns/{{ .Values.prometheus.namespace }}/sa/{{ .Values.prometheus.serviceAccount }}"]
       to:
         - operation:
             ports: ["15090"]
@@ -81,11 +81,11 @@ spec:
       to:
         - operation:
             ports: ["9200","9300"]
-    # vmi-system-es-master:15090 <- vmi-system-prometheus (uses VMO SA)
+    # vmi-system-es-master:15090 <- prometheus
     - from:
         - source:
-            namespaces: ["{{ .Release.Namespace }}"]
-            principals: ["cluster.local/ns/{{ .Release.Namespace }}/sa/{{ .Values.monitoringOperator.name }}"]
+            namespaces: ["{{ .Values.prometheus.namespace }}"]
+            principals: ["cluster.local/ns/{{ .Values.prometheus.namespace }}/sa/{{ .Values.prometheus.serviceAccount }}"]
       to:
         - operation:
             ports: ["15090"]
@@ -120,11 +120,11 @@ spec:
       to:
         - operation:
             ports: ["9200","9300"]
-    # vmi-system-es-ingest:15090 <- vmi-system-prometheus (uses VMO SA)
+    # vmi-system-es-ingest:15090 <- prometheus
     - from:
         - source:
-            namespaces: ["{{ .Release.Namespace }}"]
-            principals: ["cluster.local/ns/{{ .Release.Namespace }}/sa/{{ .Values.monitoringOperator.name }}"]
+            namespaces: ["{{ .Values.prometheus.namespace }}"]
+            principals: ["cluster.local/ns/{{ .Values.prometheus.namespace }}/sa/{{ .Values.prometheus.serviceAccount }}"]
       to:
         - operation:
             ports: ["15090"]
@@ -154,11 +154,11 @@ spec:
       to:
         - operation:
             ports: ["3000"]
-    # vmi-system-grafana:15090 <- vmi-system-prometheus
+    # vmi-system-grafana:15090 <- prometheus
     - from:
         - source:
-            namespaces: ["{{ .Release.Namespace }}"]
-            principals: ["cluster.local/ns/{{ .Release.Namespace }}/sa/{{ .Values.monitoringOperator.name }}"]
+            namespaces: ["{{ .Values.prometheus.namespace }}"]
+            principals: ["cluster.local/ns/{{ .Values.prometheus.namespace }}/sa/{{ .Values.prometheus.serviceAccount }}"]
       to:
         - operation:
             ports: ["15090"]
@@ -188,11 +188,11 @@ spec:
       to:
         - operation:
             ports: ["5601"]
-    # vmi-system-kibana:15090 <- vmi-system-prometheus (uses VMO SA)
+    # vmi-system-kibana:15090 <- prometheus
     - from:
         - source:
-            namespaces: ["{{ .Release.Namespace }}"]
-            principals: ["cluster.local/ns/{{ .Release.Namespace }}/sa/{{ .Values.monitoringOperator.name }}"]
+            namespaces: ["{{ .Values.prometheus.namespace }}"]
+            principals: ["cluster.local/ns/{{ .Values.prometheus.namespace }}/sa/{{ .Values.prometheus.serviceAccount }}"]
       to:
         - operation:
             ports: ["15090", "5601"]
@@ -222,11 +222,11 @@ spec:
       to:
         - operation:
             ports: ["8000"]
-    # verrazzano-console:15090 <- vmi-system-prometheus (uses VMO SA)
+    # verrazzano-console:15090 <- prometheus
     - from:
         - source:
-            namespaces: ["{{ .Release.Namespace }}"]
-            principals: ["cluster.local/ns/{{ .Release.Namespace }}/sa/{{ .Values.monitoringOperator.name }}"]
+            namespaces: ["{{ .Values.prometheus.namespace }}"]
+            principals: ["cluster.local/ns/{{ .Values.prometheus.namespace }}/sa/{{ .Values.prometheus.serviceAccount }}"]
       to:
         - operation:
             ports: ["15090"]
