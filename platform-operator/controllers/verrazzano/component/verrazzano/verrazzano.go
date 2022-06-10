@@ -7,19 +7,19 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
-	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/console"
-	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/fluentd"
 	"io/ioutil"
+
+	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/fluentd"
 
 	globalconst "github.com/verrazzano/verrazzano/pkg/constants"
 	vzos "github.com/verrazzano/verrazzano/pkg/os"
 	vzapi "github.com/verrazzano/verrazzano/platform-operator/apis/verrazzano/v1alpha1"
 	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/authproxy"
 	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/common"
+	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/console"
 	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
 	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/secret"
 	"github.com/verrazzano/verrazzano/platform-operator/internal/k8s/namespace"
-	"github.com/verrazzano/verrazzano/platform-operator/internal/k8s/status"
 	"github.com/verrazzano/verrazzano/platform-operator/internal/vzconfig"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -41,8 +41,6 @@ const (
 	tmpFileCleanPattern  = tmpFilePrefix + ".*\\." + tmpSuffix
 
 	nodeExporterDaemonset = "node-exporter"
-
-	prometheusDeployment = "vmi-system-prometheus-0"
 )
 
 var (
@@ -64,45 +62,7 @@ func resolveVerrazzanoNamespace(ns string) string {
 
 // isVerrazzanoReady Verrazzano component ready-check
 func isVerrazzanoReady(ctx spi.ComponentContext) bool {
-	prefix := fmt.Sprintf("Component %s", ctx.GetComponent())
-
-	// First, check deployments
-	var deployments []types.NamespacedName
-	if vzconfig.IsPrometheusEnabled(ctx.EffectiveCR()) {
-		deployments = append(deployments,
-			types.NamespacedName{
-				Name:      prometheusDeployment,
-				Namespace: ComponentNamespace,
-			})
-	}
-
-	if !status.DeploymentsAreReady(ctx.Log(), ctx.Client(), deployments, 1, prefix) {
-		return false
-	}
-
-	// Finally, check daemonsets
-	var daemonsets []types.NamespacedName
-	if vzconfig.IsPrometheusEnabled(ctx.EffectiveCR()) {
-		daemonsets = append(daemonsets,
-			types.NamespacedName{
-				Name:      nodeExporterDaemonset,
-				Namespace: globalconst.VerrazzanoMonitoringNamespace,
-			})
-	}
-	if !status.DaemonSetsAreReady(ctx.Log(), ctx.Client(), daemonsets, 1, prefix) {
-		return false
-	}
 	return common.IsVMISecretReady(ctx)
-}
-
-// doesPromExist is the verrazzano IsInstalled check
-func doesPromExist(ctx spi.ComponentContext) bool {
-	prefix := fmt.Sprintf("Component %s", ctx.GetComponent())
-	deploy := []types.NamespacedName{{
-		Name:      prometheusDeployment,
-		Namespace: ComponentNamespace,
-	}}
-	return status.DoDeploymentsExist(ctx.Log(), ctx.Client(), deploy, 1, prefix)
 }
 
 // VerrazzanoPreUpgrade contains code that is run prior to helm upgrade for the Verrazzano helm chart
@@ -167,14 +127,14 @@ func LabelKubeSystemNamespace(client clipkg.Client) error {
 	return nil
 }
 
-//cleanTempFiles - Clean up the override temp files in the temp dir
+// cleanTempFiles - Clean up the override temp files in the temp dir
 func cleanTempFiles(ctx spi.ComponentContext) {
 	if err := vzos.RemoveTempFiles(ctx.Log().GetZapLogger(), tmpFileCleanPattern); err != nil {
 		ctx.Log().Errorf("Failed deleting temp files: %v", err)
 	}
 }
 
-//importToHelmChart annotates any existing objects that should be managed by helm
+// importToHelmChart annotates any existing objects that should be managed by helm
 func importToHelmChart(cli clipkg.Client) error {
 	namespacedName := types.NamespacedName{Name: nodeExporter, Namespace: globalconst.VerrazzanoMonitoringNamespace}
 	name := types.NamespacedName{Name: nodeExporter}
@@ -203,7 +163,7 @@ func importToHelmChart(cli clipkg.Client) error {
 	return nil
 }
 
-//exportFromHelmChart annotates any existing objects that should be managed by another helm component, e.g.
+// exportFromHelmChart annotates any existing objects that should be managed by another helm component, e.g.
 // the resources associated with authproxy, fluentd and console which historically were associated with the Verrazzano chart.
 func exportFromHelmChart(cli clipkg.Client) error {
 	err := associateAuthProxyResources(cli)
@@ -319,7 +279,7 @@ func associateConsoleResources(cli clipkg.Client) error {
 	return nil
 }
 
-//associateHelmObjectToThisRelease annotates an object as being managed by the verrazzano helm chart
+// associateHelmObjectToThisRelease annotates an object as being managed by the verrazzano helm chart
 func associateHelmObjectToThisRelease(cli clipkg.Client, obj clipkg.Object, namespacedName types.NamespacedName) (clipkg.Object, error) {
 	return common.AssociateHelmObject(cli, obj, types.NamespacedName{Name: ComponentName, Namespace: globalconst.VerrazzanoSystemNamespace}, namespacedName, false)
 }
