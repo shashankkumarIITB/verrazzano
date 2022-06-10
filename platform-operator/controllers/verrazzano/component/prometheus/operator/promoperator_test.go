@@ -23,6 +23,7 @@ import (
 	istioclisec "istio.io/client-go/pkg/apis/security/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
+	netv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -670,4 +671,22 @@ func TestCreateOrUpdatePrometheusAuthPolicy(t *testing.T) {
 	assert.Contains(authPolicy.Spec.Rules[0].From[0].Source.Principals, "cluster.local/ns/verrazzano-system/sa/verrazzano-monitoring-operator")
 	assert.Contains(authPolicy.Spec.Rules[0].From[0].Source.Principals, "cluster.local/ns/verrazzano-system/sa/vmi-system-kiali")
 	assert.Contains(authPolicy.Spec.Rules[1].From[0].Source.Principals, serviceAccount)
+}
+
+// TestCreateOrUpdateNetworkPolicies tests the createOrUpdateNetworkPolicies function
+func TestCreateOrUpdateNetworkPolicies(t *testing.T) {
+	// GIVEN a Prometheus Operator component
+	// WHEN  the createOrUpdateNetworkPolicies function is called
+	// THEN  no error is returned and the expected network policies have been created
+	client := fake.NewClientBuilder().WithScheme(testScheme).Build()
+	ctx := spi.NewFakeContext(client, &vzapi.Verrazzano{}, false)
+
+	err := createOrUpdateNetworkPolicies(ctx)
+	assert.NoError(t, err)
+
+	netPolicy := &netv1.NetworkPolicy{}
+	err = client.Get(context.TODO(), types.NamespacedName{Name: networkPolicyName, Namespace: ComponentNamespace}, netPolicy)
+	assert.NoError(t, err)
+	assert.Equal(t, []netv1.PolicyType{netv1.PolicyTypeIngress}, netPolicy.Spec.PolicyTypes)
+	assert.Equal(t, int32(9090), netPolicy.Spec.Ingress[0].Ports[0].Port.IntVal)
 }
