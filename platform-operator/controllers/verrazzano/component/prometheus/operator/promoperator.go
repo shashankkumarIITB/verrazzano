@@ -43,7 +43,7 @@ const (
 	serviceAccount  = "cluster.local/ns/verrazzano-monitoring/sa/prometheus-operator-kube-p-prometheus"
 
 	prometheusAuthPolicyName = "vmi-system-prometheus-authzpol"
-	networkPolicyName = "vmi-system-prometheus"
+	networkPolicyName        = "vmi-system-prometheus"
 )
 
 // isPrometheusOperatorReady checks if the Prometheus operator deployment is ready
@@ -415,6 +415,8 @@ func createOrUpdatePrometheusAuthPolicy(ctx spi.ComponentContext) error {
 		return ctx.Log().ErrorfNewErr("Failed creating/updating Prometheus auth policy: %v", err)
 	}
 	return err
+}
+
 // createOrUpdateNetworkPolicies creates or updates network policies for this component
 func createOrUpdateNetworkPolicies(ctx spi.ComponentContext) error {
 	netPolicy := &netv1.NetworkPolicy{ObjectMeta: metav1.ObjectMeta{Name: networkPolicyName, Namespace: ComponentNamespace}}
