@@ -6,3 +6,5 @@ serviceMonitor:
   namespace: verrazzano-monitoring
 persistentVolume:
   enabled: false
+podLabels:
+  sidecar.istio.io/inject: "false"
