@@ -261,9 +261,9 @@ func appConfigMetricsExists() bool {
 }
 
 func nodeExporterProcsRunning() bool {
-	return pkg.MetricsExist("node_procs_running", "job", "node-exporter")
+	return pkg.MetricsExist("node_procs_running", "job", "prometheus-node-exporter")
 }
 
 func nodeExporterDiskIoNow() bool {
-	return pkg.MetricsExist("node_disk_io_now", "job", "node-exporter")
+	return pkg.MetricsExist("node_disk_io_now", "job", "prometheus-node-exporter")
 }
