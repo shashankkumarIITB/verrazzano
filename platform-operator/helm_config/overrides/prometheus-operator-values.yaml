@@ -21,6 +21,11 @@ prometheus:
         values:
         - prometheus-operator
         - prometheus-node-exporter
+  serviceMonitor:
+    relabelings:
+      - action: replace
+        targetLabel: verrazzano_cluster
+        replacement: local
 alertmanager:
   enabled: false
 prometheusOperator:
