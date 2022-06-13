@@ -37,16 +37,15 @@ const (
 	keycloakNamespace         = "keycloak"
 
 	// Constants for various metric labels, used in the validation
-	nodeExporter        = "node-exporter"
+	nodeExporter        = "prometheus-node-exporter"
 	istiod              = "istiod"
-	prometheus          = "prometheus"
+	prometheus          = "prometheus-operator-kube-p-prometheus"
 	controllerNamespace = "controller_namespace"
 	ingressController   = "ingress-controller"
 	appK8SIOInstance    = "app_kubernetes_io_instance"
 	job                 = "job"
 	app                 = "app"
 	namespace           = "namespace"
-	pilot               = "pilot"
 	podName             = "pod_name"
 )
 
@@ -154,7 +153,7 @@ var _ = t.Describe("Prometheus Metrics", Label("f:observability.monitoring.prom"
 				Eventually(func() bool {
 					kv := map[string]string{
 						app: istiod,
-						job: pilot,
+						job: istiod,
 					}
 					return metricsContainLabels(sidecarInjectionRequests, kv)
 				}, longWaitTimeout, longPollingInterval).Should(BeTrue())
