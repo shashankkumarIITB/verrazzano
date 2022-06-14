@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	certapiv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
+	cmmeta "github.com/jetstack/cert-manager/pkg/apis/meta/v1"
 	"github.com/stretchr/testify/assert"
 	asserts "github.com/stretchr/testify/assert"
 	vmoconst "github.com/verrazzano/verrazzano-monitoring-operator/pkg/constants"
@@ -17,6 +18,7 @@ import (
 	vzconst "github.com/verrazzano/verrazzano/pkg/constants"
 	vzapi "github.com/verrazzano/verrazzano/platform-operator/apis/verrazzano/v1alpha1"
 	"github.com/verrazzano/verrazzano/platform-operator/constants"
+	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/authproxy"
 	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/common"
 	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
 	"github.com/verrazzano/verrazzano/platform-operator/internal/config"
@@ -205,13 +207,45 @@ func TestPreInstallUpgrade(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-// TestPreUpgrade tests the preUpgrade function.
+// TestPostInstallUpgrade tests the postInstallUpgrade function.
 func TestPostInstallUpgrade(t *testing.T) {
 	// GIVEN the Prometheus Operator is being installed or upgraded
 	// WHEN the postInstallUpgrade function is called
 	// THEN the function does not return an error
-	client := fake.NewClientBuilder().WithScheme(testScheme).Build()
-	ctx := spi.NewFakeContext(client, &vzapi.Verrazzano{}, false)
+	oldConfig := config.Get()
+	defer config.Set(oldConfig)
+	config.Set(config.OperatorConfig{
+		VerrazzanoRootDir: "../../../../../..",
+	})
+
+	vz := &vzapi.Verrazzano{
+		Spec: vzapi.VerrazzanoSpec{
+			Components: vzapi.ComponentSpec{
+				DNS: &vzapi.DNSComponent{
+					OCI: &vzapi.OCI{
+						DNSZoneName: "mydomain.com",
+					},
+				},
+			},
+		},
+	}
+
+	ingress := &netv1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{Name: constants.PrometheusIngress, Namespace: authproxy.ComponentNamespace},
+	}
+
+	time := metav1.Now()
+	cert := &certapiv1.Certificate{
+		ObjectMeta: metav1.ObjectMeta{Name: prometheusCertificateName, Namespace: authproxy.ComponentNamespace},
+		Status: certapiv1.CertificateStatus{
+			Conditions: []certapiv1.CertificateCondition{
+				{Type: certapiv1.CertificateConditionReady, Status: cmmeta.ConditionTrue, LastTransitionTime: &time},
+			},
+		},
+	}
+
+	client := fake.NewClientBuilder().WithScheme(testScheme).WithObjects(ingress, cert).Build()
+	ctx := spi.NewFakeContext(client, vz, false)
 
 	err := postInstallUpgrade(ctx)
 	assert.NoError(t, err)

@@ -11,7 +11,6 @@ import (
 	"github.com/verrazzano/verrazzano/platform-operator/constants"
 	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/authproxy"
 	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/certmanager"
-	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/common"
 	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/helm"
 	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/nginx"
 	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
@@ -98,28 +97,9 @@ func (c prometheusComponent) PreUpgrade(ctx spi.ComponentContext) error {
 	return preInstallUpgrade(ctx)
 }
 
-// PostInstall does post-install processing for the Prometheus Operator Component
-func (c prometheusComponent) PostInstall(ctx spi.ComponentContext) error {
-	return postInstallUpgrade(ctx)
-}
-
-// PostUpgrade does post-upgrade processing for the Prometheus Operator Component
-func (c prometheusComponent) PostUpgrade(ctx spi.ComponentContext) error {
-	return postInstallUpgrade(ctx)
-}
-
 // PostInstall creates/updates associated resources after this component is installed
 func (c prometheusComponent) PostInstall(ctx spi.ComponentContext) error {
-	if err := applySystemMonitors(ctx); err != nil {
-		return err
-	}
-	if err := updateApplicationAuthorizationPolicies(ctx); err != nil {
-		return err
-	}
-	if err := common.CreateOrUpdateSystemComponentIngress(ctx, constants.PrometheusIngress, prometheusHostName, prometheusCertificateName); err != nil {
-		return err
-	}
-	if err := createOrUpdatePrometheusAuthPolicy(ctx); err != nil {
+	if err := postInstallUpgrade(ctx); err != nil {
 		return err
 	}
 
@@ -127,30 +107,15 @@ func (c prometheusComponent) PostInstall(ctx spi.ComponentContext) error {
 	c.IngressNames = c.GetIngressNames(ctx)
 	c.Certificates = c.GetCertificateNames(ctx)
 
-	if err := createOrUpdateNetworkPolicies(ctx); err != nil {
-		return err
-	}
 	return c.HelmComponent.PostInstall(ctx)
 }
 
 // PostInstall creates/updates associated resources after this component is upgraded
 func (c prometheusComponent) PostUpgrade(ctx spi.ComponentContext) error {
-	if err := applySystemMonitors(ctx); err != nil {
-		return err
-	}
-	if err := updateApplicationAuthorizationPolicies(ctx); err != nil {
-		return err
-	}
-	if err := common.CreateOrUpdateSystemComponentIngress(ctx, constants.PrometheusIngress, prometheusHostName, prometheusCertificateName); err != nil {
-		return err
-	}
-	if err := createOrUpdatePrometheusAuthPolicy(ctx); err != nil {
+	if err := postInstallUpgrade(ctx); err != nil {
 		return err
 	}
 
-	if err := createOrUpdateNetworkPolicies(ctx); err != nil {
-		return err
-	}
 	return c.HelmComponent.PostUpgrade(ctx)
 }
 

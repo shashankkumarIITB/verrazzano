@@ -90,6 +90,22 @@ func postInstallUpgrade(ctx spi.ComponentContext) error {
 		return nil
 	}
 
+	if err := applySystemMonitors(ctx); err != nil {
+		return err
+	}
+	if err := updateApplicationAuthorizationPolicies(ctx); err != nil {
+		return err
+	}
+	if err := common.CreateOrUpdateSystemComponentIngress(ctx, constants.PrometheusIngress, prometheusHostName, prometheusCertificateName); err != nil {
+		return err
+	}
+	if err := createOrUpdatePrometheusAuthPolicy(ctx); err != nil {
+		return err
+	}
+
+	if err := createOrUpdateNetworkPolicies(ctx); err != nil {
+		return err
+	}
 	// if there is a persistent volume that was migrated from the VMO-managed Prometheus, make sure the reclaim policy is set
 	// back to its original value
 	return resetVolumeReclaimPolicy(ctx)
