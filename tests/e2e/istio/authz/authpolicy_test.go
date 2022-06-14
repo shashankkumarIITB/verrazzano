@@ -28,14 +28,6 @@ const fooNamespace string = "foo"
 const barNamespace string = "bar"
 const noIstioNamespace string = "noistio"
 
-const vmiPromConfigName string = "vmi-system-prometheus-config"
-const verrazzanoNamespace string = "verrazzano-system"
-const prometheusConfigMapName string = "prometheus.yml"
-const prometheusFooScrapeName string = "authpolicy-appconf_default_foo_springboot-frontend"
-const prometheusBarScrapeName string = "authpolicy-appconf_default_bar_springboot-frontend"
-const prometheusNoIstioScrapeName string = "authpolicy-appconf_default_noistio_springboot-frontend"
-const prometheusHTTPSScheme string = "scheme: https"
-
 var expectedPodsFoo = []string{"sleep-workload", "springboot-frontend-workload", "springboot-backend-workload"}
 var expectedPodsBar = []string{"sleep-workload", "springboot-frontend-workload", "springboot-backend-workload"}
 var waitTimeout = 15 * time.Minute
