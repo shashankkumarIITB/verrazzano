@@ -5,10 +5,9 @@
 # release name). Instead override the full name of the daemonset to what we want.
 fullName: prometheus-node-exporter
 
-# Enable Prometheus ServiceMonitor
+# Prometheus ServiceMonitor settings
 prometheus:
   monitor:
-    enabled: true
     relabelings:
       - action: replace
         targetLabel: verrazzano_cluster
