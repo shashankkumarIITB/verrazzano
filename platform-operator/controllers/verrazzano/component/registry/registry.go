@@ -4,6 +4,7 @@
 package registry
 
 import (
+	vzapi "github.com/verrazzano/verrazzano/platform-operator/apis/verrazzano/v1alpha1"
 	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/appoper"
 	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/authproxy"
 	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/certmanager"
@@ -147,11 +148,25 @@ func checkDependencies(c spi.Component, context spi.ComponentContext, visited ma
 			return trace, err
 		}
 		// Only check if dependency is ready when the dependency is enabled
-		if dependency.IsEnabled(context.EffectiveCR()) && !dependency.IsReady(context) {
+		if !isInReadyState(context, dependency) && // CR status does not already indicate ready status
+			dependency.IsEnabled(context.EffectiveCR()) && !dependency.IsReady(context) {
 			stateMap[dependencyName] = false // dependency is not ready
 			continue
 		}
 		stateMap[dependencyName] = true // dependency is ready
 	}
 	return stateMap, nil
+}
+
+func isInReadyState(context spi.ComponentContext, comp spi.Component) bool {
+	dependencyStatus, ok := context.ActualCR().Status.Components[comp.Name()]
+	if ok {
+		context.Log().Infof("Dependency %s state: %s", comp.Name(), dependencyStatus.State)
+		// We've already reported Ready status for this component
+		if dependencyStatus.State == vzapi.CompStateReady {
+			context.Log().Infof("Dependency %s in Ready state", comp.Name())
+			return true
+		}
+	}
+	return false
 }
