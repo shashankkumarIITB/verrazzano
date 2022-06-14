@@ -180,7 +180,7 @@ var _ = t.Describe("Test Network Policies", Label("f:security.netpol"), func() {
 			},
 			func() {
 				t.Logs.Info("Test verrazzano-platform-operator ingress rules")
-				err := testAccess(metav1.LabelSelector{MatchLabels: map[string]string{"app": "node-exporter"}}, "monitoring", metav1.LabelSelector{MatchLabels: map[string]string{"app": "verrazzano-platform-operator"}}, "verrazzano-install", 9443, true)
+				err := testAccess(metav1.LabelSelector{MatchLabels: map[string]string{"app": "prometheus-node-exporter"}}, "verrazzano-monitoring", metav1.LabelSelector{MatchLabels: map[string]string{"app": "verrazzano-platform-operator"}}, "verrazzano-install", 9443, true)
 				Expect(err).To(BeNil(), fmt.Sprintf("FAIL: Test verrazzano-platform-operator ingress rules failed: reason = %s", err))
 			},
 			func() {
@@ -196,7 +196,7 @@ var _ = t.Describe("Test Network Policies", Label("f:security.netpol"), func() {
 				t.Logs.Info("Test verrazzano-application-operator ingress rules")
 				err := testAccess(metav1.LabelSelector{MatchLabels: map[string]string{"app": "netpol-test"}}, "netpol-test", metav1.LabelSelector{MatchLabels: map[string]string{"app": "verrazzano-application-operator"}}, "verrazzano-system", 9443, true)
 				Expect(err).To(BeNil(), fmt.Sprintf("FAIL: Test verrazzano-application-operator ingress rules failed: reason = %s", err))
-				err = testAccess(metav1.LabelSelector{MatchLabels: map[string]string{"app": "node-exporter"}}, "monitoring", metav1.LabelSelector{MatchLabels: map[string]string{"app": "verrazzano-application-operator"}}, "verrazzano-system", 9443, true)
+				err = testAccess(metav1.LabelSelector{MatchLabels: map[string]string{"app": "prometheus-node-exporter"}}, "verrazzano-monitoring", metav1.LabelSelector{MatchLabels: map[string]string{"app": "verrazzano-application-operator"}}, "verrazzano-system", 9443, true)
 				Expect(err).To(BeNil(), fmt.Sprintf("FAIL: Test verrazzano-application-operator ingress rules failed: reason = %s", err))
 			},
 			func() {
@@ -216,9 +216,9 @@ var _ = t.Describe("Test Network Policies", Label("f:security.netpol"), func() {
 				Expect(err).To(BeNil(), fmt.Sprintf("FAIL: Test verrazzano-console ingress rules failed: reason = %s", err))
 			},
 			func() {
-				t.Logs.Info("Test node-exporter ingress rules")
-				err := testAccess(metav1.LabelSelector{MatchLabels: map[string]string{"app.kubernetes.io/name": "prometheus"}}, "verrazzano-monitoring", metav1.LabelSelector{MatchLabels: map[string]string{"app": "node-exporter"}}, "monitoring", nodeExporterMetricsPort, true)
-				Expect(err).To(BeNil(), fmt.Sprintf("FAIL: Test node-exporter ingress rules failed: reason = %s", err))
+				t.Logs.Info("Test prometheus-node-exporter ingress rules")
+				err := testAccess(metav1.LabelSelector{MatchLabels: map[string]string{"app.kubernetes.io/name": "prometheus"}}, "verrazzano-monitoring", metav1.LabelSelector{MatchLabels: map[string]string{"app": "prometheus-node-exporter"}}, "verrazzano-monitoring", nodeExporterMetricsPort, true)
+				Expect(err).To(BeNil(), fmt.Sprintf("FAIL: Test prometheus-node-exporter ingress rules failed: reason = %s", err))
 			},
 			func() {
 				t.Logs.Info("Test istio-ingressgateway ingress rules")
@@ -296,9 +296,9 @@ var _ = t.Describe("Test Network Policies", Label("f:security.netpol"), func() {
 				Expect(err).To(BeNil(), fmt.Sprintf("FAIL: Test prometheus ingress rules failed: reason = %s", err))
 			},
 			func() {
-				t.Logs.Info("Test node-exporter ingress rules")
-				err := testAccess(metav1.LabelSelector{MatchLabels: map[string]string{"app.kubernetes.io/name": "prometheus"}}, "verrazzano-monitoring", metav1.LabelSelector{MatchLabels: map[string]string{"app": "node-exporter"}}, "monitoring", 9100, true)
-				Expect(err).To(BeNil(), fmt.Sprintf("FAIL: Test node-exporter ingress rules failed: reason = %s", err))
+				t.Logs.Info("Test prometheus-node-exporter ingress rules")
+				err := testAccess(metav1.LabelSelector{MatchLabels: map[string]string{"app.kubernetes.io/name": "prometheus"}}, "verrazzano-monitoring", metav1.LabelSelector{MatchLabels: map[string]string{"app": "prometheus-node-exporter"}}, "verrazzano-monitoring", 9100, true)
+				Expect(err).To(BeNil(), fmt.Sprintf("FAIL: Test prometheus-node-exporter ingress rules failed: reason = %s", err))
 			},
 			func() {
 				t.Logs.Info("Test weblogic-operator ingress rules")
