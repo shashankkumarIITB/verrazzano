@@ -29,7 +29,7 @@ prometheus:
 rancher:
   enabled: true
 prometheusOperator:
-  enabled: false
+  enabled: true
 prometheusAdapter:
   enabled: false
 kubeStateMetrics:
@@ -37,8 +37,7 @@ kubeStateMetrics:
 prometheusPushgateway:
   enabled: false
 prometheusNodeExporter:
-  enabled: false
+  enabled: true
 jaegerOperator:
-  enabled: false
-istio:
+  enabled: falseistio:
   enabled: true

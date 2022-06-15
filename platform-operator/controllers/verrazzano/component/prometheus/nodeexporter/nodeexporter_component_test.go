@@ -96,6 +96,7 @@ func TestIsEnabled(t *testing.T) {
 // not otherwise
 func TestAppendOverrides(t *testing.T) {
 	trueValue := true
+	falseValue := false
 	tests := []struct {
 		name              string
 		actualCR          vzapi.Verrazzano
@@ -111,6 +112,9 @@ func TestAppendOverrides(t *testing.T) {
 					Components: vzapi.ComponentSpec{
 						PrometheusNodeExporter: &vzapi.PrometheusNodeExporterComponent{
 							Enabled: &trueValue,
+						},
+						PrometheusOperator: &vzapi.PrometheusOperatorComponent{
+							Enabled: &falseValue,
 						},
 					},
 				},
