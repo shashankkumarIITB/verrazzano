@@ -26,6 +26,8 @@ prometheus:
         values:
         - prometheus-operator
         - prometheus-node-exporter
+        - kube-state-metrics
+        - prometheus-pushgateway
   serviceMonitor:
     relabelings:
       - action: replace
