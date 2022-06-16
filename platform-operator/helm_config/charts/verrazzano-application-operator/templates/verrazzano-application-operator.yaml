@@ -312,6 +312,9 @@ spec:
     - name: https-webhook
       port: 443
       targetPort: 9443
+      - name: https-metric-vao
+      port: 9100
+      targetPort: 9100
   selector:
     app: {{ .Values.name }}
 ---
@@ -339,6 +342,9 @@ spec:
           ports:
             - containerPort: 9443
               name: https-webhook
+              protocol: TCP
+               - containerPort: 9100
+              name: https-metric-vao
               protocol: TCP
           args:
             - --zap-log-level={{ .Values.logLevel }}
