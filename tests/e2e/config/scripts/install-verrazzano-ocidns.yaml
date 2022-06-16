@@ -16,6 +16,17 @@ spec:
         dnsScope: GLOBAL
     ingress:
       type: LoadBalancer
+      nginxInstallArgs:
+      - name: controller.service.annotations."service\.beta\.kubernetes\.io/oci-load-balancer-shape"
+        value: "8000Mbps"
+      - name: controller.service.annotations."service\.beta\.kubernetes\.io/oci-load-balancer-security-list-management-mode"
+        value: "None"
+    istio:
+      istioInstallArgs:
+      - name: gateways.istio-ingressgateway.serviceAnnotations."service\.beta\.kubernetes\.io/oci-load-balancer-shape"
+        value: "8000Mbps"
+      - name: gateways.istio-ingressgateway.serviceAnnotations."service\.beta\.kubernetes\.io/oci-load-balancer-security-list-management-mode"
+        value: "None"
     fluentd:
       extraVolumeMounts:
         - source: /u01/data
