@@ -24,13 +24,9 @@ import (
 )
 
 const (
-	prometheusConfigMapName  = "vmi-system-prometheus-config"
-	prometheusYamlKey        = "prometheus.yml"
 	scrapeConfigsKey         = "scrape_configs"
 	prometheusConfigBasePath = "/etc/prometheus/config/"
 	managedCertsBasePath     = "/etc/prometheus/managed-cluster-ca-certs/"
-	configMapKind            = "ConfigMap"
-	configMapVersion         = "v1"
 	scrapeConfigTemplate     = constants.PrometheusJobNameKey + `: ##JOB_NAME##
 scrape_interval: 20s
 scrape_timeout: 15s
