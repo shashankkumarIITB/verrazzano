@@ -81,14 +81,14 @@ spec:
       to:
         - operation:
             ports: ["9200","9300"]
-    # vmi-system-es-master:15090 <- prometheus
+    # vmi-system-es-master:9200,15090 <- prometheus
     - from:
         - source:
             namespaces: ["{{ .Values.prometheus.namespace }}"]
             principals: ["cluster.local/ns/{{ .Values.prometheus.namespace }}/sa/{{ .Values.prometheus.serviceAccount }}"]
       to:
         - operation:
-            ports: ["15090"]
+            ports: ["9200","15090"]
 ---
 #
 # Istio AuthorizationPolicy for vmi-system-es-master
@@ -120,14 +120,14 @@ spec:
       to:
         - operation:
             ports: ["9200","9300"]
-    # vmi-system-es-ingest:15090 <- prometheus
+    # vmi-system-es-ingest:9200,15090 <- prometheus
     - from:
         - source:
             namespaces: ["{{ .Values.prometheus.namespace }}"]
             principals: ["cluster.local/ns/{{ .Values.prometheus.namespace }}/sa/{{ .Values.prometheus.serviceAccount }}"]
       to:
         - operation:
-            ports: ["15090"]
+            ports: ["9200","15090"]
 {{- end }}
 
 ---

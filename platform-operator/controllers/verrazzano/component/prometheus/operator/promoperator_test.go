@@ -407,19 +407,19 @@ func TestApplySystemMonitors(t *testing.T) {
 	err := applySystemMonitors(ctx)
 	assert.NoError(t, err)
 
-	// expect that 3 PodMonitors are created
+	// expect that 2 PodMonitors are created
 	monitors := &unstructured.UnstructuredList{}
 	monitors.SetGroupVersionKind(schema.GroupVersionKind{Group: "monitoring.coreos.com", Version: "v1", Kind: "PodMonitor"})
 	err = client.List(context.TODO(), monitors)
 	assert.NoError(t, err)
-	assert.Len(t, monitors.Items, 3)
+	assert.Len(t, monitors.Items, 2)
 
-	// expect that 1 ServiceMonitor is created
+	// expect that 2 ServiceMonitors are created
 	monitors = &unstructured.UnstructuredList{}
 	monitors.SetGroupVersionKind(schema.GroupVersionKind{Group: "monitoring.coreos.com", Version: "v1", Kind: "ServiceMonitor"})
 	err = client.List(context.TODO(), monitors)
 	assert.NoError(t, err)
-	assert.Len(t, monitors.Items, 1)
+	assert.Len(t, monitors.Items, 2)
 }
 
 // TestValidatePrometheusOperator tests the validation of the Prometheus Operator installation and the Verrazzano CR
