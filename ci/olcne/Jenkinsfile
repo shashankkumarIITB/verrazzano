@@ -501,14 +501,14 @@ pipeline {
             
             script {
                 if (keepOLCNEClusterOnFailure == false) {
-                    echo "[INFO] Deleting OLCNE Cluster"
-                    deleteOLCNECluster()
-                    echo "[INFO] Deleting OCI DNS Zone"
-                    deleteOCIDNSZone()
                     echo "[INFO] Deleting OCI FileSystem"
                     deleteOCIFileSystem()
                     echo "[INFO] Deleting OCI LoadBalancers"
                     deleteOCILoadBalancers()
+                    echo "[INFO] Deleting OCI DNS Zone"
+                    deleteOCIDNSZone()
+                    echo "[INFO] Deleting OLCNE Cluster"
+                    deleteOLCNECluster()
                 }
             }
 
@@ -999,8 +999,8 @@ def createOCIFileSystem() {
         -n "$TF_VAR_prefix-fs" -m "$TF_VAR_prefix-mt" \
         -p "/$TF_VAR_prefix-export" -c $TF_VAR_compartment_id -s $PRIVATE_SUBNET_OCID
     """
-    MT_PVT_IP_OCID=sh(returnStdout: true, script: "oci fs mount-target list --compartment-id $TF_VAR_compartment_id --availability-domain $TF_VAR_availability_domain_id --display-name $TF_VAR_prefix-mt --lifecycle-state ACTIVE | jq -r '.data[0].\"private-ip-ids\"[0]'")
-    OCI_MOUNT_IP=sh(returnStdout: true, script: "oci network private-ip get --private-ip-id $MT_PVT_IP_OCID | jq -r '.data.\"ip-address\"'")
+    MT_PVT_IP_OCID=sh(returnStdout: true, script: """oci fs mount-target list --compartment-id $TF_VAR_compartment_id --availability-domain $TF_VAR_availability_domain_id --display-name $TF_VAR_prefix-mt --lifecycle-state ACTIVE | jq -r '.data[0]."private-ip-ids"[0]'""")
+    OCI_MOUNT_IP=sh(returnStdout: true, script: """oci network private-ip get --private-ip-id $MT_PVT_IP_OCID | jq -r '.data."ip-address"'""")
     OCI_EXPORT_PATH="/$TF_VAR_prefix-export"
 }
 
