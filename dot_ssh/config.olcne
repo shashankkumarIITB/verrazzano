@@ -1,0 +1,32 @@
+Host *
+  ForwardAgent yes
+  ForwardX11 yes
+  StrictHostKeyChecking no
+  UserKnownHostsFile /dev/null
+  LogLevel ERROR
+  ServerAliveInterval 120
+
+Host o 
+  User opc
+  Hostname 10.0.1.
+  IdentityFile ~/.ssh/id_rsa
+
+Host m
+  User opc
+  Hostname 10.0.1.
+  IdentityFile ~/.ssh/id_rsa
+
+Host w1
+  User opc
+  Hostname 10.0.1.
+  IdentityFile ~/.ssh/id_rsa
+
+Host w2
+  User opc
+  Hostname 10.0.1.
+  IdentityFile ~/.ssh/id_rsa
+
+Host w3
+  User opc
+  Hostname 10.0.1.
+  IdentityFile ~/.ssh/id_rsa

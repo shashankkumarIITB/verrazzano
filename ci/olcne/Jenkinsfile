@@ -162,50 +162,47 @@ pipeline {
         INSTALL_CONFIG_FILE_OLCNE="$GO_REPO_PATH/verrazzano/tests/e2e/config/scripts/install-verrazzano-olcne.yaml"
         OLCNE_TERRAFORM_GIT_URL=credentials("terraform-oci-olcne-url")
         OLCNE_BRANCH_TO_USE="origin/release/$OLCNE_VERSION"
-        API_SERVER_IP=""
-        WORKER_NODES_IP=""
-        CONTROL_PLANE_NODES_IP=""
-        VCN_OCID=""
-        VCN_CIDR=""
-        PUBLIC_SUBNET_OCID=""
-        PRIVATE_SUBNET_OCID=""
-        BASTION_IP=""
-        BASTION_USER=""
-        TEST_VAR=""
+        API_SERVER_IP="10.0.0.51"
+        WORKER_NODES_IP="10.0.0.154 10.0.0.110 10.0.0.126"
+        CONTROL_PLANE_NODES_IP="10.0.0.22"
+        VCN_OCID="ocid1.vcn.oc1.iad.amaaaaaao3yqxzyasdcwtqy7yiarzjpelz3pmavnefnqi4qj32rzxvgmovpq"
+        VCN_CIDR="10.0.0.0/16"
+        PUBLIC_SUBNET_OCID="ocid1.subnet.oc1.iad.aaaaaaaaex3qvxdvg2aocigpndsbrie6lb5jsjsifyzp2z3gbi4ne6bh3r7q"
+        PRIVATE_SUBNET_OCID="ocid1.subnet.oc1.iad.aaaaaaaagy6y2op4pzacwiwrp2bcykml3di26326hmmy67elovxmohz4zg6a"
+        BASTION_IP="132.145.147.156"
+        BASTION_USER="opc"
 
         // Terraform variables
-        TF_VAR_tenancy_id=credentials('oci-tenancy')
-        TF_VAR_compartment_id=credentials('oci-tiburon-dev-compartment-ocid')
-        TF_VAR_user_id=credentials('oci-user-ocid')
-        TF_VAR_fingerprint=credentials('oci-api-key-fingerprint')
-        TF_VAR_api_private_key_path=credentials('oci-api-key')
-        TF_VAR_region="${params.OLCNE_CLUSTER_REGION}"
-        TF_VAR_availability_domain_id="${params.OLCNE_CLUSTER_AVAILABILITY_DOMAIN}"
+        TF_VAR_tenancy_id= "ocid1.tenancy.oc1..aaaaaaaa763cu5f3m7qpzwnvr2shs3o26ftrn7fkgz55cpzgxmglgtui3v7q"
+        TF_VAR_compartment_id="ocid1.compartment.oc1..aaaaaaaagmzrrc6md4dq3n5rseeug5kvx2p2tpup3t2dx7gzmdojmtwil7mq"
+        TF_VAR_user_id="ocid1.user.oc1..aaaaaaaa3qvi6d6gto22iry2xs2rfs5khdzymdycn2rgdbfkecpdieb37bfq"
+        TF_VAR_fingerprint="a3:59:89:aa:60:e8:18:d2:ca:58:6f:77:ec:de:e4:ec"
+        TF_VAR_api_private_key_path="$GO_REPO_PATH/dot_oci/verrazzano_api_key.pem"
+        TF_VAR_region="us-ashburn-1"
+        TF_VAR_availability_domain_id="hXgQ:US-ASHBURN-AD-1"
         TF_VAR_deploy_networking="true"
         TF_VAR_bastion_enabled="true"
-        TF_VAR_bastion_private_key_path="$WORKSPACE/terraform-oci-olcne/id_rsa"
-        TF_VAR_prefix="vz-$TEST_ENV"
+        TF_VAR_bastion_private_key_path="$GO_REPO_PATH/dot_ssh/id_rsa"
+        TF_VAR_prefix="sk"
         TF_VAR_use_vault="false"
-        TF_VAR_ssh_public_key_path="$WORKSPACE/terraform-oci-olcne/id_rsa.pub"
-        TF_VAR_ssh_private_key_path="$WORKSPACE/terraform-oci-olcne/id_rsa"
-        TF_VAR_worker_node_count="${params.WORKER_NODE_COUNT}"
-        TF_VAR_control_plane_node_count="${params.CONTROL_PLANE_NODE_COUNT}"
-        TF_VAR_os_version="${params.OLCNE_OS_VERSION}"
-        TF_VAR_environment_name="${params.OLCNE_ENVIRONMENT_NAME}"
-        TF_VAR_kubernetes_name="${params.OLCNE_KUBERNETES_NAME}"
-        TF_VAR_olcne_version="${params.OLCNE_VERSION}"
-        TF_VAR_s3_bucket_access_key=credentials('oci-s3-bucket-access-key')
-        TF_VAR_s3_bucket_secret_key=credentials('oci-s3-bucket-secret-key')
+        TF_VAR_ssh_public_key_path="$GO_REPO_PATH/dot_ssh/id_rsa.pub"
+        TF_VAR_ssh_private_key_path="$GO_REPO_PATH/dot_ssh/id_rsa"
+        TF_VAR_worker_node_count="3"
+        TF_VAR_control_plane_node_count="1"
+        TF_VAR_os_version="8"
+        TF_VAR_environment_name="myenvironment"
+        TF_VAR_kubernetes_name="mycluster"
+        TF_VAR_olcne_version="1.5"
 
         // OCI variables
         OCI_CLI_SUPPRESS_FILE_PERMISSIONS_WARNING='True'
-        OCI_CLI_REGION="${params.OLCNE_CLUSTER_REGION}"
-        OCI_CLI_TENANCY=credentials('oci-tenancy')
-        OCI_CLI_USER=credentials('oci-user-ocid')
-        OCI_CLI_FINGERPRINT=credentials('oci-api-key-fingerprint')
-        OCI_CLI_KEY_FILE=credentials('oci-api-key')
+        OCI_CLI_REGION="us-ashburn-1"
+        OCI_CLI_TENANCY="ocid1.tenancy.oc1..aaaaaaaa763cu5f3m7qpzwnvr2shs3o26ftrn7fkgz55cpzgxmglgtui3v7q"
+        OCI_CLI_USER="ocid1.user.oc1..aaaaaaaa3qvi6d6gto22iry2xs2rfs5khdzymdycn2rgdbfkecpdieb37bfq"
+        OCI_CLI_FINGERPRINT="a3:59:89:aa:60:e8:18:d2:ca:58:6f:77:ec:de:e4:ec"
+        OCI_CLI_KEY_FILE="$GO_REPO_PATH/dot_oci/verrazzano_api_key.pem"
         // OCI_DNS_COMPARTMENT_OCID and OCI_PRIVATE_KEY_FILE are needed for setting up DNS zone in OCI
-        OCI_DNS_COMPARTMENT_OCID=credentials('oci-dns-compartment')
+        OCI_DNS_COMPARTMENT_OCID="ocid1.compartment.oc1..aaaaaaaagmzrrc6md4dq3n5rseeug5kvx2p2tpup3t2dx7gzmdojmtwil7mq"
         OCI_DNS_SCOPE="${params.OCI_DNS_SCOPE}"
         OCI_DNS_ZONE_SUBDOMAIN_NAME="$dnsZoneSubdomainName"
         OCI_DNS_ZONE_NAME="${OCI_DNS_ZONE_SUBDOMAIN_NAME}.v8o.io"
@@ -282,38 +279,6 @@ pipeline {
                         mkdir -p $GO_REPO_PATH/verrazzano
                         tar cf - . | (cd $GO_REPO_PATH/verrazzano/ ; tar xf -)
                         rm -rf $WORKSPACE/*
-                    """
-
-                    echo "[INFO] SCM checkout of $OLCNE_TERRAFORM_GIT_URL $OLCNE_BRANCH_TO_USE"
-                    def scmInfo=checkout([
-                        $class: 'GitSCM',
-                        branches: [[name: env.OLCNE_BRANCH_TO_USE]],
-                        doGenerateSubmoduleConfigurations: false,
-                        extensions: [],
-                        submoduleCfg: [],
-                        userRemoteConfigs: [[url: env.OLCNE_TERRAFORM_GIT_URL, credentialsId: 'sk_gitlab_rw']]])
-                    env.TF_GIT_COMMIT=scmInfo.GIT_COMMIT
-                    env.TF_GIT_BRANCH=scmInfo.GIT_BRANCH
-                    // If the commit we were handed is not what the SCM says we are using, fail
-                    if (!env.TF_GIT_BRANCH.equals(env.OLCNE_BRANCH_TO_USE)) {
-                        echo "[ERROR] SCM didn't checkout the branch we expected. Expected: ${env.OLCNE_BRANCH_TO_USE}, Found: ${scmInfo.GIT_BRANCH}"
-                        exit 1
-                    }
-                    echo "[INFO] SCM checkout of ${env.TF_GIT_BRANCH} at ${env.TF_GIT_COMMIT}"
-                                        
-                    sh """
-                        rm -rf $GO_REPO_PATH/terraform-oci-olcne
-                        mkdir -p $GO_REPO_PATH/terraform-oci-olcne
-                        tar cf - . | (cd $GO_REPO_PATH/terraform-oci-olcne/ ; tar xf -)
-                        rm -rf $WORKSPACE/*
-                    """
-
-                    // Install terraform and generate ssh keys
-                    sh """
-                        sudo yum-config-manager --add-repo http://yum.oracle.com/repo/OracleLinux/OL7/developer/x86_64 
-                        sudo yum install -y terraform
-                        mkdir -p $WORKSPACE/terraform-oci-olcne
-                        ssh-keygen -t rsa -b 4096 -q -N "" -f $TF_VAR_ssh_private_key_path
                     """
 
                     sh """

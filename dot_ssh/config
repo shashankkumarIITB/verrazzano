@@ -1,0 +1,53 @@
+Host *
+  ForwardAgent yes
+  ForwardX11 yes
+  StrictHostKeyChecking no
+  UserKnownHostsFile /dev/null
+  LogLevel ERROR
+  ServerAliveInterval 120
+
+Host dev
+  HostName 100.111.142.149
+  User kumkshas
+  IdentityFile ~/.ssh/id_rsa
+
+Host oci-ol8
+  User opc
+  Hostname 100.100.248.131
+  IdentityFile ~/.ssh/id_rsa
+
+Host oci-ol7
+  User opc
+  Hostname 100.100.253.252
+  IdentityFile ~/.ssh/id_rsa
+
+Host olcne
+  User opc
+  Hostname 150.136.149.51
+  IdentityFile ~/.ssh/id_rsa
+
+Host operator
+  User opc
+  Hostname olcne-operator-host.sub05300749251.skvcn.oraclevcn.com
+  IdentityFile ~/.ssh/id_rsa
+
+Host control
+  User opc
+  Hostname k8s-control-plane-node.sub05300749251.skvcn.oraclevcn.com
+  IdentityFile ~/.ssh/id_rsa
+
+Host worker-1
+  User opc
+  Hostname k8s-worker-node-1.sub05300749251.skvcn.oraclevcn.com
+  IdentityFile ~/.ssh/id_rsa
+
+Host worker-2
+  User opc
+  Hostname k8s-worker-node-2.sub05300749251.skvcn.oraclevcn.com
+  IdentityFile ~/.ssh/id_rsa
+
+Host worker-3
+  User opc
+  Hostname k8s-worker-node-3.sub05300749251.skvcn.oraclevcn.com
+  IdentityFile ~/.ssh/id_rsa
+

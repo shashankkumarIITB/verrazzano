@@ -1,0 +1,12 @@
+[V8ODEV]
+user=ocid1.user.oc1..aaaaaaaaqcxluptcjwivtyrmxzv5abypcvu6g24t7edcfzwphj4agvbij34a
+fingerprint=a3:59:89:aa:60:e8:18:d2:ca:58:6f:77:ec:de:e4:ec
+tenancy=ocid1.tenancy.oc1..aaaaaaaaxoefuizibg3gzqjzrm2cny6thdtnygajy4liami6qlhv3dlydw5a
+region=us-ashburn-1
+key_file=~/.oci/verrazzano_api_key.pem
+[GREENBERG]
+user=ocid1.user.oc1..aaaaaaaa3qvi6d6gto22iry2xs2rfs5khdzymdycn2rgdbfkecpdieb37bfq
+fingerprint=a3:59:89:aa:60:e8:18:d2:ca:58:6f:77:ec:de:e4:ec
+tenancy=ocid1.tenancy.oc1..aaaaaaaa763cu5f3m7qpzwnvr2shs3o26ftrn7fkgz55cpzgxmglgtui3v7q
+region=us-ashburn-1
+key_file=~/.oci/verrazzano_api_key.pem
